@@ -1,0 +1,2514 @@
+DAY-1: 01-06-2026: MINIKUBE INSTALLATION & PODS
+
+SETUP:
+sudo apt update -y
+sudo apt upgrade -y
+sudo apt install curl wget apt-transport-https -y
+sudo curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+sudo chmod +x /usr/local/bin/minikube
+sudo minikube version
+sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+sudo echo "$(cat kubectl.sha256) kubectl"   sha256sum --check
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+sudo minikube start --driver=docker --force
+
+
+PODS:
+
+IMPERATIVE:
+
+kubectl run pod1 --image nginx
+kubectl get pods/pod/po
+kubectl get pod -o wide
+kubectl describe pod pod1
+kubectl delete pod pod1
+
+vim pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+spec:
+  containers:
+    - image: vinodvanama/paytmtrain:latest
+      name: cont1
+
+execution: 
+kubectl create -f pod.yml
+kubectl get pods/pod/po
+kubectl get pod -o wide
+kubectl describe pod pod1
+kubectl delete -f raham.yml
+
+========================================================================================================================================================
+
+DAY-2: 02-06-2026: REPLICASET, DEPLOYMENT, ROLLOUT COMMANDS
+
+vim replicaset.yml
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: rahashaik/movies:latest
+
+COMANDS:
+TO CREATE              : kubectl create -f abc.yml      
+TO LIST                : kubectl get rs
+NODE INFO              : kubectl get pod -o wide
+COMPLETE INFO          : kubectl describe rs movies
+TO EDIT                : kubectl edit rs movies
+TO DELETE              : kubectl delete rs movies
+TO SCALE               : kubectl scale rs/movies --replicas=10 (LIFO)
+TO SHOW LABELS         : kubectl get pods -l app=Paytm
+
+we cant Rollin and rollout, we cant update the application in rs.
+v1 -- > v2
+v2 -- > v1
+
+
+
+DEPLOYMENT CODE:
+
+vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: rahamshaik/mynetflix:1.0
+
+
+
+COMMANDS:
+TO CREATE              : kubectl create -f abc.yml      
+TO LIST                : kubectl get rs
+NODE INFO              : kubectl get pod -o wide
+COMPLETE INFO          : kubectl describe rs movies
+TO EDIT                : kubectl edit deploy movies (line 36)
+
+
+NOTE: TO GET INFO OF  DEPLOYMENT TO FILE
+kubectl create deployment movies  --image=name  --replicas=4 --dry-run=client -o yaml > movies-deployment.yml
+
+ROLLOUT COMMANDS:
+kubectl rollout history deployment movies 	: to show deployment versions
+kubectl rollout status deployment movies 	: to show deployment status
+kubectl rollout undo deployment movies 		: to show rollback deployment 
+kubectl rollout pause deployment movies 	: to show pause deployment
+kubectl rollout resume deployment movies 	: to show unpause deployment 
+kubectl rollout undo deploy movies --to-revision=1 : rollout to version 1
+
+
+TO DELETE   les        : kubectl delete deploy movies
+TO SCALE               : kubectl scale deploy/movies --replicas=10 (LIFO)
+TO SHOW LABELS         : kubectl get pods -l app=Paytm
+IMPERATIVE             :kubectl create deploy movies --image=name --replicas=4
+
+========================================================================================================================================================
+
+DAY-3: 03-06-2026: MULTI CONTAINER PODS, INIT CONTAINER, SIDE CAR, JOBS, CRONJOBS
+
+INIT CONTRAINER:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'sleep 1']
+
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 1000']
+
+kubectl create -f file.yml
+kubectl get po
+
+
+SIDE CAR:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: myapp
+          image: alpine:latest
+          command: ['sh', '-c', 'while true; do echo "logging" >> /opt/logs.txt; sleep 1; done']
+          volumeMounts:
+            - name: data
+              mountPath: /opt
+      initContainers:
+        - name: logshipper
+          image: alpine:latest
+          # Setting restartPolicy: Always makes this a sidecar container.
+          restartPolicy: Always
+          command: ['sh', '-c', 'tail -F /opt/logs.txt']
+          volumeMounts:
+            - name: data
+              mountPath: /opt
+      volumes:
+        - name: data
+          emptyDir: {}
+
+kubectl create -f file.yml
+kubectl get po
+kubectl logs myapp-68bdc564bb-7v5pg -c logshipper
+
+
+JOBS:
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        command: ['sh', '-c', 'echo db backup completed']
+      restartPolicy: Never
+  backoffLimit: 4
+
+kubectl create -f file.yml
+kubectl get job
+kubectl get po
+kubectl logs your-pod-name
+
+CRONJOB:
+
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+
+
+kubectl create -f file.yml
+kubectl get cronjob
+kubectl get po
+kubectl logs your-pod-name
+
+
+========================================================================================================================================================
+
+DAY-4: 04-06-2026: MERTIC SERVER, HPA, VPA 
+
+METRIC SERVER INSTALLATION:
+
+minikube addons list
+minikube addons enable metrics-server
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+kubectl top nodes
+kubectl top pods
+
+Metrics Server offers:
+
+METRIC SERVER: Metrics of pods/nodes (cpu, ram, disk   )
+its not a built in feature in k8s (HEAPSTER)
+we install metric server in all the nodes
+it creates like a pod -- > (DaemonSet)
+Req: 1 millcore , 2 Mb Ram
+it collects metrics for every 15 sec
+Scalable support up to 5,000 node clusters.
+
+
+You can use Metrics Server for:
+CPU/Memory based horizontal autoscaling (Horizontal Autoscaling)
+Automatically adjusting/suggesting resources needed by containers (Vertical Autoscaling)
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+
+
+kubectl apply -f dep.yml
+kubectl get all
+kubectl get deploy 
+kubectl autoscale deployment movies --cpu=20 --min=3 --max=10 --dry-run=client -o yaml > hpa.yml
+kubectl create -f hpa.yml
+kubectl get hpa
+kubectl desribe hpa movies
+kubectl get al1
+
+open second termina and give
+kubectl get po --watch
+
+come to first terminal and go inside pod
+kubectl exec mydeploy-6bd88977d5-7s6t8 -it -- /bin/bash
+
+apt update && apt install stress -y && stress -c 10
+
+check terminal two to see live pods
+
+
+
+behavior:
+  scaleDown:
+    stabilizationWindowSeconds: 300
+
+
+behavior:
+  scaleDown:
+    policies:
+    - type: Pods
+      value: 1
+      periodSeconds: 60
+    - type: Percent
+      value: 10
+      periodSeconds: 60
+
+
+
+INSTALLING VPA:
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/vpa-release-1.0/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/vpa-release-1.0/vertical-pod-autoscaler/deploy/vpa-rbac.yaml
+
+
+CODE:
+
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: movies-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: movies
+  updatePolicy:
+    updateMode: "Recreate"
+
+CONFIGMAP & SECRETS:
+
+kubectl create cm dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > cm.yml
+kubectl create -f cm.yml
+
+
+cat pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-configmap
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - configMapRef:
+            name: dbcreds
+
+kubectl create -f pod1.yml
+
+kubectl get po
+kubectl exec -it env-configmap -- /bin/bash 
+
+root@env-configmap:/# echo $user
+raham
+root@env-configmap:/# echo $password
+test123
+
+
+TYPES:
+
+docker-registry   Create a secret for use with a Docker registry
+generic           Create a secret from a local file, directory, or literal value
+tls               Create a TLS secret
+
+
+kubectl create secret generic dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > secrets.yml
+kubectl create -f secrets.yml 
+
+
+cat pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-secret
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - secretRef:
+            name: dbcreds
+
+kubectl create -f pod2.yml
+
+
+kubectl get po
+kubectl exec -it env-secret -- /bin/bash 
+
+root@env-secret:/# echo $user
+raham
+root@env-secret:/# echo $password
+test123
+========================================================================================================================================================
+
+DAY-5: 05-06-2026: NAMESPACES, SERVICES 
+
+SERVICE: 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: movies
+  name: movies-deploy
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/moviespaytm:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: ClusterIP
+  selector:
+    app: movies
+  ports:
+    - port: 80
+
+
+to check output
+
+kubectl get svc
+curl http://cluster-ip:80
+
+
+NOTE: REPLACE ClusterIp with NodePort and LoadBalancer 
+to Practise those concepts
+
+
+What Is Headless Services?
+A Kubernetes headless service is a form of service that doesn't allocate a cluster IP to represent a set of pods. Instead of load-balancing traffic across a group of pods, a headless service allows DNS queries for the service to go back to the individual IP addresses of all the pods associated with it.
+
+
+Use Cases For Headless Services
+StatefulSets And Pod Identity
+Database Clustering
+Custom Load Balancing
+
+use 
+clusterIp: None
+
+	
+NAMESPACES:
+
+
+kubectl get pod -n kube-system	: to list all pods in kube-system namespace
+kubectl get pod -n default	: to list all pods in default namespace
+kubectl get pod -n kube-public	: to list all pods in kube-public namespace
+kubectl get po -A		: to list all pods in all namespaces
+kubectl get po --all-namespaces
+
+kubectl create ns dev	: to create namespace
+kubectl config set-context --current --namespace=dev : to switch to the namespace
+kubectl config view : to see current namespace
+kubectl run dev1 --image nginx
+kubectl run dev2 --image nginx
+kubectl run dev3 --image nginx
+kubectl get po 
+kubectl create ns test	: to create namespace
+kubectl config set-context --current --namespace=test : to switch to the namespace
+kubectl config view --minify   grep namespace : to see current namespace
+kubectl get po -n dev
+kubectl delete pod dev1 -n dev
+kubectl delete ns dev	: to delete namespace
+kubectl delete pod --all: to delete all pods
+
+NOTE: BY DEFAULT K8S NAMESPACE WILL PROVIDE ISOLATION BUT NOT RESTRICTION.
+TO RESTRICT THE USER TO ACCESS A NAMESPACE IN REAL TIME WE USE RBAC.
+WE CREATE USER, WE GIVE ROLES AND ATTACH ROLE.
+
+alias switch="kubectl config set-context --current"
+switch --namespace=default
+switch --namespace=dev
+
+
+
+
+============================================================================================
+DAY-6: 08-06-2026: PV, PVC, SC
+
+
+STEP-1: CREATE 2 SERVER (1 MASTER & 1 WORKER) (STEP 1 TO STEP 6 COMMON FOR ALL NODES)
+STEP-2: UPDATE 
+sudo apt update -y && sudo apt upgrade -y
+
+STEP-3: Then import GPG key and configure APT repository.
+
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+
+STEP-4: INSTALL KUBECTL, KUBELET, KUBEADM
+(KUBECTL   : to communicate with k8s)
+(KUBELET   : to create pods)
+(KUBEADM   : to create cluster)
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+
+STEP-5: INSTALL CONTAINER RUNTIME  (to create containers)
+
+sudo apt-get update
+sudo apt install containerd -y
+
+STEP-6: C GROUP DRIVER
+
+Cgroup drivers (short for Control Group drivers) are components of the Linux kernel that manage how system resources (like CPU, memory, disk I/O, etc.) are allocated to containers/process.
+
+mkdir -p /etc/containerd
+containerd config default
+containerd config default  >> /etc/containerd/config.toml
+#change line 139 false to true
+sed -i '109s/false/true/' /etc/containerd/config.toml
+systemctl restart containerd.service
+systemctl status containerd.service
+echo "1" >> /proc/sys/net/ipv4/ip_forward #(0=no connetion to servers) (1=connect to other servers)
+
+STEP-7: CREATE CLUSTER WITH KUBEADM (RUN COMMAND ON MASTER NODE)
+
+kubeadm init  --apiserver-advertise-address 172.31.2.33 --pod-network-cidr "10.0.0.0/16" --upload-certs --ignore-preflight-errors=all
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl get no
+
+GIVE THIS TOKEN ON ALL WORKER NODES: (COPY PAST YOUR TOKEN NOT MINE)
+
+kubeadm join 172.31.24.115:6443 --token shns2s.akxuwrq6yvo43u6o \
+        --discovery-token-ca-cert-hash sha256:647e837c76c8c2eeac4ddd82ac9e2c8ea93679d81e44d697c65fa4b84d8a2da0 --ignore-preflight-errors=all
+                            
+kubectl get no
+
+STEP-8: DEPLOY A NETWORK PLUGIN (WEAVENET)
+GO TO ADDONS PAGE IN K8S DOCS AND FIND IT
+
+kubectl apply -f https://reweave.azurewebsites.net/k8s/v1.29/net.yaml
+
+
+STEP-9: COPY PASTE TOKEN ON WORKER NODE
+kubeadm join 172.31.27.84:6443 --token u97a1o.2e46o337yico1pov \
+        --discovery-token-ca-cert-hash sha256:2206382552dff3b58277a4010ad96657d3b2bba4ceae221e0f048fcbeae5c310
+
+STEP-10: RUN A POD
+kubectl run pod1 --image nginx
+kubectl get po
+
+
+
+sudo apt update -y && sudo apt upgrade -y
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key : sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.36/deb/ /' : sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update && apt upgrade
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+kubeadm version
+
+sleep 5
+
+sudo apt-get update
+sudo apt install containerd -y
+
+sleep 5
+
+mkdir -p /etc/containerd
+containerd config default
+containerd config default  >> /etc/containerd/config.toml
+sed -i '109s/false/true/' /etc/containerd/config.toml
+systemctl restart containerd.service
+echo "1" >> /proc/sys/net/ipv4/ip_forward 
+
+============================================================================================
+
+DAY-7: 08-06-2026: PV, PVC, SC
+
+RESTRICTIONS:
+1. Instances must be on same az as the ebs 
+2. EBS supports only a sinlge EC2 instance mounting
+
+pv.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    volumeID: vol-00f0972c9227d9710
+    fsType: ext4
+
+
+pvc.yml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+
+dep.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+     app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: raham
+        image: ubuntu:rolling
+        command: ["/bin/bash", "-c", "sleep 10000"]
+        volumeMounts:
+        - name: my-pv
+          mountPath: "/tmp/abc"
+      volumes:
+        - name: my-pv
+          persistentVolumeClaim:
+            claimName: my-pvc
+
+kubectl exec pvdeploy-86c99cf54d-d8rj4 -it -- /bin/bash
+cd /tmp/abc/
+touch file{1..5}
+ls
+vim file1 -- > write some data now 
+exit
+
+now delete the pod and new pod will created then in that pod you will see the same content.
+
+
+vim sc.yml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+
+
+kubectl create -f sc.yml
+kubectl get sc
+
+
+==============================================================================================================
+
+
+DAY-8: 09-06-2026: QUOTAS, REQUESTS & LIMITS, QOS, DAEMONSET & STATEFULSET
+
+
+kubectl create ns dev
+kubectl config set-context --current --namespace=dev
+
+
+cat dev-quota.yml
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-quota
+  namespace: dev
+spec:
+  hard:
+    pods: "10"
+    limits.cpu: "1"
+    limits.memory: 1Gi
+
+
+
+cat dep.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+          resources:
+            limits:
+              cpu: "0.1"
+              memory: 100Mi
+
+
+CHANGE THE VALUES AND CHECK PODS AND QUOTAS
+INCREASE CPU & RAM & PODS
+
+kubectl get events 
+kubectl get events --field-selector type=Warning
+kubectl get events --field-selector type=Warning --sort-by='.lastTimestamp'
+
+
+
+
+DAEMONSET:
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+
+
+kubectl create -f ds.yml
+kubectl get no
+kubectl get po
+
+number of nodes = number of pods
+
+STATEFUL SET:
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: "mongo"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-storage
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 200Mi
+
+
+EXECUTION:
+
+kubectl exec -it mongo-0 -- /bin/bash 
+cd /data/db
+create some files
+Delete the pod and you can get same data
+
+
+==============================================================================
+
+DAY-9: 10-06-2026: RBAC, ROLES, ROLEBINDINGS, CLUSTER ROLES, CLUSTER ROLEBINDINGS
+
+
+mkdir dev1 && cd dev1
+
+1. Generate a key using OpenSSL:  (admission)
+openssl genrsa -out dev1.key 2048    
+
+
+2. Generate a Client Sign Request (CSR) :  (learning)
+openssl req -new -key dev1.key -out dev1.csr -subj "/CN=dev1/O=group1"
+ls ~/.minikube/
+
+3. Generate the certificate (CRT):  (CCC)
+openssl x509 -req -in dev1.csr -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.key -CAcreateserial -out dev1.crt -days 500
+
+Now, that we have the .key and the .crt, we can create a user.
+
+
+
+Create a user
+1. Set a user entry in kubeconfig
+kubectl config set-credentials dev1 --client-certificate=dev1.crt --client-key=dev1.key
+
+2.Set a context entry in kubeconfig
+kubectl config set-context dev1 --cluster=minikube --user=dev1
+
+CREATE A NS: kubectl create ns dev
+
+3.Switching to the created user
+kubectl config use-context dev1
+
+SWITCH TO DEV NS: kubectl config set-context --current --namespace=dev
+
+
+kubectl run pod1 --image nginx 
+
+kubectl get po
+Error from server (Forbidden): namespaces is forbidden: User "dev1" cannot create resource "namespaces" in API group "" at the cluster scope
+
+Grant access to the user
+To give access to manage k8s resources to dev1, we need to create a Role and a BindingRole.
+
+kubectl config use-context minikube
+
+
+CREATING ROLE:
+
+kubectl create role dev-role --namespace dev --resource=pods --verb=get,create,list --dry-run=client -o yaml > dev-role.yml
+
+kubectl create -f dev-role.yml
+kubectl get role -n dev
+kubectl describe role -n dev
+
+CREATING ROLE-BINDING:
+
+kubectl create rolebinding dev-rolebinding --namespace dev --user dev1 --role=dev-role --dry-run=client -o yaml > dev-rolebinding.yml
+kubectl apply -f dev-role.yml
+
+kubectl create -f dev-rolebinding.yml
+kubectl get rolebindings -n dev
+kubectl describe rolebindings -n dev
+
+VERIFIYIING:
+
+kubectl config use-context dev1
+kubectl get po
+kubectl run pod1 --image nginx 
+
+kubectl delete pod pod1	# error
+
+kubectl config use-context minikube
+kubectl create role dev-role --namespace dev --resource=pods --verb=get,create,list,delete --dry-run=client -o yaml > dev-role.yml
+kubectl apply -f dev-role.yml
+
+kubectl config use-context dev1
+kubectl delete pod pod1	: success
+
+kubectl create deploy abc --image nginx --replicas 3 : error
+
+
+kubectl config use-context minikube
+
+kubectl create role dev-role --namespace dev --resource=pods,deployment --verb=get,create,list,delete --dry-run=client -o yaml > dev-role.yml
+kubectl apply -f dev-role.yml
+
+
+kubectl create deploy abc --image nginx --replicas 3 : success
+
+
+
+CHECK WITH MULTIPLE NAMESPACES:
+
+kubectl config use-context minikube
+kubectl create ns test
+kubectl config use-context dev1
+kubectl config set-context --current --namespace=test
+kubectl get po	# ERROR
+kubectl config set-context --current --namespace=default
+kubectl get po	# ERROR
+
+
+
+
+kubectl create clusterrole dev-clusterrole --resource=pods --verb=get,create,list --dry-run=client -o yaml > dev-clusterrole.yml
+kubectl create -f dev-clusterrole.yml
+kubectl get clusterrole
+
+
+kubectl create clusterrolebinding dev-clusterrole --clusterrole dev-clusterrole --user dev1 --dry-run=client -o yaml > dev-clusterrolebinding.yml
+kubectl create -f dev-clusterrolebinding.yml
+kubectl get clusterrolebindings
+
+
+kubectl config use-context dev1
+
+
+kubectl config use-context dev1
+kubectl run pod1 --image nginx -n dev	  # SUCCESS
+kubectl run pod1 --image nginx -n test	  # SUCCESS
+kubectl run pod1 --image nginx -n default # SUCCESS
+
+
+
+=======================================================================================
+
+DAY-10: 11-06-2026: SERVICE ACCOUNTS, API OPERATIONS, SECURITY CONTEXT & PATCH
+
+
+kubectl create ns prod
+
+vim sa.yml
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: prod
+
+kubectl create sa jenkins -n prod --dry-run=client -o yaml > sa.yml
+kubectl create -f sa.yml
+
+NOTE: TO WORK IN REAL TIME SA NEED TOKENS TO WORK WITH K8S CLUSTER
+
+THIS COMMAND WILL CREATE A ROLE FOR JENKINS SA:
+kubectl create role jenkinsrole --verb=create,delete,list  --resource=pods --namespace=prod --dry-run=client -o yaml > jenkinsrole.yml
+kubectl create -f jenkinsrole.yml
+
+THIS COMMAND WILL ATTACH ROLE FOR JENKINS SA:
+kubectl create rolebinding jenkinsrolebinding --role=jenkinsrole --serviceaccount=prod:jenkins --dry-run=client -o yaml  > jenkinsrolebinding.yml
+kubectl create -f jenkinsrolebinding.yml -n prod
+
+
+
+
+VERIFY:
+kubectl auth can-i list pods --as=system:serviceaccount:kube-system:jenkins
+no
+kubectl auth can-i create pods --as=system:serviceaccount:default:jenkins
+yes
+kubectl auth can-i delete pods --as=system:serviceaccount:default:jenkins
+yes
+kubectl auth can-i delete cm --as=system:serviceaccount:default:jenkins
+no
+
+
+
+WORK WITH GRAFAN:
+kubectl create ns grafana
+kubectl create sa Grafana
+kubectl create clusterrole grafanaclusterrole --verb=* --resource=pods,deployments
+
+kubectl create clusterrolebinding grafanaclusterrolebind1 --clusterrole=grafanaclusterrole --serviceaccount=grafana:grafana
+
+kubectl create clusterrolebinding grafanaclusterrolebind2 --clusterrole=grafanaclusterrole --serviceaccount=kube-system:grafana
+
+kubectl create clusterrolebinding grafanaclusterrolebind1 --clusterrole=grafanaclusterrole --serviceaccount=kube-public:grafana
+
+VERIFY:
+
+kubectl auth can-i list pods --as=system:serviceaccount:default:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-system:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-public:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-node-lease:grafana
+no
+
+
+
+
+NORAML POD:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+spec:
+  containers:
+  - image: nginx
+    name: pod1
+
+
+SECURE POD:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-nonroot
+spec:
+  securityContext:
+    runAsUser: 101
+    runAsGroup: 101
+    fsGroup: 101
+
+  containers:
+  - name: nginx
+    image: nginxinc/nginx-unprivileged:latest
+
+    ports:
+    - containerPort: 8080
+
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+
+      capabilities:
+        drop:
+        - ALL
+
+
+PATCH:
+
+
+kubectl create deploy abc --image nginx --replicas 1
+kubectl get deploy
+kubectl get deployments.apps -o yaml
+kubectl patch deployment abc  -p '{"spec":{"replicas":2}}'
+kubectl get deployments.apps -o yaml
+
+
+========================================================================================================================================
+
+DAY-11: 12-06-2026: CONFIGMAP, SECRETS, CLUSTER UPGRADE, DRAIN & CORDON/UNCORDON
+
+kubectl create cm dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > cm.yml
+kubectl create -f cm.yml
+
+
+cat pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-configmap
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - configMapRef:
+            name: dbcreds
+
+kubectl create -f pod1.yml
+
+kubectl get po
+kubectl exec -it env-configmap -- /bin/bash 
+
+root@env-configmap:/# echo $user
+raham
+root@env-configmap:/# echo $password
+test123
+
+
+TYPES:
+
+docker-registry   Create a secret for use with a Docker registry
+generic           Create a secret from a local file, directory, or literal value
+tls               Create a TLS secret
+
+
+kubectl create secret generic dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > secrets.yml
+kubectl create -f secrets.yml 
+
+
+cat pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-secret
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - secretRef:
+            name: dbcreds
+
+kubectl create -f pod2.yml
+
+
+kubectl get po
+kubectl exec -it env-secret -- /bin/bash 
+
+root@env-secret:/# echo $user
+raham
+root@env-secret:/# echo $password
+test123
+
+
+
+CLUSTER UPGRADE: https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+
+
+====================================================================================================
+
+DAY-12: 15-06-2026: DEPLOYMENT STRATEGIES, EKS
+
+ROLLING STRATEGIES:
+If you have pods running with version-1.0 then you will create new pods with version-2.0 and remove old ones.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+  name: netflix-deploy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+  
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: NodePort
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+      nodePort: 31111
+
+
+kubectl edit deployment netflix-deploy
+line 33: modify v:1.0 to 2.0
+
+RECREATE:
+
+We need to Down all the servers and we need to deploy new version then we need to bring the services into Running state.
+We can also achieve this on another way we need to create a separate infrastructure.
+And you can migrate to new infra to minimise the downtime.
+But in this case we can run previous, current and new code run in same time.
+Here we required some downtime.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+  name: netflix-deploy
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+---  
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: NodePort
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+      nodePort: 31111
+
+
+kubectl edit deployment netflix-deploy
+line 33: modify v:1.0 to 2.0
+
+
+BLUE GREEN: 
+
+BLUE-GREEN DEPLOYMENT:
+If we have some existing servers then we create new servers and we will route traffic by using ELB from existing servers to the new servers.
+If it will not work properly we need to do Rollback
+Blue is the Old code and the Green is New code.
+Blue/Green Deployment: Version B is released alongside Version A, and then the traffic is switched over to Version B.
+
+
+
+cat dep1.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+    version: blue
+  name: netflix-blue-deploy
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+  
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: NodePort
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+      nodePort: 31111
+
+
+
+cat dep2.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+    version: green
+  name: netflix-green-deploy
+
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:2.0
+        ports:
+          - containerPort: 80
+  
+apiVersion: v1
+kind: Service
+metadata:
+  name: service2
+spec:
+  type: NodePort
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+      nodePort: 31111
+
+AFTER EXECURING BOTH FILES
+
+we will delete the dep1.yml
+
+CANARY:
+Canary: Version B is released to a subgroup of users, then proceeds to a full rollout
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+    version: stable
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: stable
+    spec:
+      containers:
+        - name: nginx
+          image: rahamshaik/mynetflix:1.0
+          ports:
+            - containerPort: 80
+  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-canary
+  labels:
+    app: nginx
+    version: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: canary
+    spec:
+      containers:
+        - name: nginx
+          image: rahamshaik/mynetflix:2.0
+          ports:
+            - containerPort: 80
+  
+apiVersion: v1
+kind: Service
+metadata:
+  name: service2
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      nodePort: 31111
+
+
+
+EKS:
+
+SETUP: TAKE UBUNTU AMI M7I-FLEX.LARGE AND 30 GB EBS FOR THIS CONCEPT
+
+#STEP-1: UPDATE
+
+sudo -i
+apt update && apt install unzip -y
+
+#STEP-2: AWS CLI INSTALLATION & EKS & KUBECTL 
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+aws configure
+
+curl -LO https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl
+chmod +x kubectl
+mv kubectl /usr/local/bin/kubectl
+
+
+sudo wget https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz
+sudo tar -xzvf eksctl_$(uname -s)_amd64.tar.gz -C /usr/local/bin
+eksctl version
+
+
+#STEP-3: CREATE CLUSTER
+eksctl create cluster --name=raham-cluster --version 1.32 --zones=ap-south-1a,ap-south-1b,ap-south-1c --without-nodegroup
+
+kubectl cluster-info
+kubectl cluster-info dump
+
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster raham-cluster --approve
+
+#STEP-4: CREATE NODEGROUP
+eksctl create nodegroup --cluster=raham-cluster --region=ap-south-1 \
+--name=raham-cluster-ng-1 --node-type=t3.micro \
+--nodes=2 --nodes-min=4 --nodes-max=6 --node-volume-size=20 \
+--ssh-access  --ssh-public-key=eksss \
+--managed --asg-access --external-dns-access --full-ecr-access \
+--appmesh-access --alb-ingress-access
+
+
+eksctl get clusters
+eksctl get nodegroup --cluster raham-cluster 
+
+#STEP-5: DELETE RESOURCES  
+eksctl delete nodegroup --cluster raham-cluster --name raham-cluster-ng-1
+eksctl delete cluster --name=raham-cluster
+
+
+SCALING:
+EKS -- > SELECT CLUSTER -- > COMPUTE -- > EDIT -- > 
+
+AUTOMODE:
+
+CLUSTER UPDATING:
+AT A TIME IN K8S WE CAN UPDATE ONE VERSION
+
+1.31 -- > 1.32
+
+
+
+==========================================================================================
+
+DAY-13: 16-06-2026: TAINT & TOLERATION, NODE SELECTOR, NODE & POD AFFINITY, STATIC PODS
+
+BEST EXAMPLE: PET DOG LOYALITY
+
+SCHEDULER:
+Scheduler main work is to select the node to place the pod.
+while a pod is created it will select a node based on pod requirment.
+if scheduler cant find node then pod will be on pending state.
+Initially we can place a pod on node by writing node name on manifest.
+scheduler runs as a pod if it stop/delete scheduling wont happen.
+
+
+
+
+TAINTS & TOLERATIONS:
+By Default scheduler can place any pod on any Node.
+if we want to place Pod-1 on  Node-1 then we use Taints & Tolerations.
+First we taint the Node-01 so that no pod will be placed on any node.
+Then we can tolerate the Particular pod what we want to place on Node-01.
+We set Taint for Nodes & Tolerations for Pods.
+EX: Kubectl taint node01 app=paytm:NoSchedule
+NOTE: it wont guarantee that  pod-1 definitely place on Node-01 all the time
+By Default k8s master is tainted thats why no pod is placed on master.
+To schedule pod on a master add - at end by running taint command.
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: nginx
+      tolerations:
+        - key: "dog"
+          operator: "Equal"
+          value: "pitbull"
+          effect: "NoSchedule"
+
+kubectl taint node i-04a90983debd1c8ec dog=pitbull:NoSchedule
+
+NODE SELECTOR:
+Kubernetes can select nodes to place pods based on the labels of a node.
+First we can label the node & later same labels we can add to pod manifest.
+Now all pods will be set on same node.
+NOTE: It can place pod on node with single label, But if we want to place pod on a node with multiple lables this wont work.
+kubectl label node node_id key=value
+
+kubectl label nodes node-1 meat=mutton
+
+
+NOTE: UNTAINT THE NODE
+kubectl taint node node_id app=swiggy:NoSchedule-
+  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: nginx
+      nodeSelector:
+        meat: "mutton"
+
+
+NOTE: IF NODE IS HAVING ANY TAINTS THE PODS WILL NOT SCHEDULE
+kubectl taint node i-06c09c90c2768ceba app=swiggy:NoSchedule-
+
+kubcetl create -f dep.yml
+
+TO REMOVE LABEL: kubectl label node i-0b17bfc7885c1c9f3 hero=diwakar --overwrite
+
+
+
+NODE AFFINITY:
+its a feature in Kubernetes that facilitates us to specify the rules for scheduling the pod based on the node labels. 
+we can use operators with multiple values too.
+OPERATORS: [In, NotIn, Exists, DoesNotExist, Gt, Lt]
+TYPES:
+requiredDuringSchedulingIgnoredDuringExecution:  While scheduling matching the label is mandatory, after placing pod optional.
+
+PreferredDuringSchedulingIgnoredDuringExecution: While scheduling matching the label is not mandatory, after placing pod optional.
+
+
+kubectl label node node-1-id meat=mutton  (node-1)
+kubectl label node node-2-id meat=fish    (node-2)
+
+GIVE LABELS AND TRY THIS 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: meat
+                operator: In
+                values:
+                - chicken
+                - mutton
+
+POD AFFINITY    : PLACES POD-2 ON WHERE POD-1 IS PLACED
+POD ANTI AFFINIT: PLACES POD-2 ON WHERE POD-1 IS NOT PLACED
+
+=========================================================================================
+
+DAY-14: 17-06-2026: HELM
+
+
+INSTALLATION OF HELM:
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+
+INSTALLATION OF METRIC SERVER:
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+
+CHARTS WEBSITE LINK: https://artifacthub.io/
+
+DOWNLOADING CHARTS PROMETHEUS & GRAFANA:
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+
+
+UPDATE HELM CHART REPOS:
+helm repo update
+helm repo list
+
+CREATE PROMETHEUS NAMESPACE:
+kubectl create namespace prometheus
+kubectl get ns
+
+INSTALL PROMETHEUS:
+helm template prometheus-community/prometheus
+
+helm install prometheus prometheus-community/prometheus --namespace prometheus --set alertmanager.persistentVolume.storageClass="gp2" --set server.persistentVolume.storageClass="gp2"
+kubectl get all -n prometheus
+
+CREATE GRAFANA NAMESPACE:
+kubectl create namespace grafana
+
+INSTALL GRAFANA:
+helm template grafana grafana/grafana
+
+
+helm install grafana grafana/grafana --namespace grafana  --set adminPassword='RahamDevOps' --set  service.type=NodePort
+
+set  service.type=LoadBalancer
+kubectl get all -n grafana
+kubectl get svc -n grafana
+
+
+
+NOTE: ALLOW PORTS ON SG
+
+Copy the EXTERNAL-IP and paste in browser
+
+Go to Grafana Dashboard → Add the Datasource → Select the Prometheus
+add the below url in Connection and save and test
+http://prometheus-server.prometheus.svc.cluster.local/
+
+Import Grafana dashboard from Grafana Labs
+grafana dashboard → new → Import → 14623 → load → select prometheus → import
+
+
+
+11454 -- > for pv and pvcs
+747 -- > pod metrics
+14623 -- > k8s overview db
+13105
+15661
+15757	
+
+
+: Dashboard : Purpose                         :
+:        :                     - :
+: 15757     : Cluster Overview                :
+: 15758     : Pods & Namespaces               :
+: 15759     : Node Monitoring                 :
+: 15760     : Deployment & Replica Monitoring :
+: 1860      : Node Infra Metrics              :
+: 315       : Full K8s Visibility             :
+:11454      : for pv and pvcs	              :
+:14623      : k8s overview db		      :
+
+
+
+1 CLUSTER :
+5000 NODES
+1,50,000 PODS
+3,00,000 CONTAINERS
+110 PODS/NODE
+CHATGPT:
+
+
+
+
+CREATE YOUR OWN CHART:
+helm create devops
+cd devops
+helm install version-1 .
+NOTE: change ClusterIP to NodePort by using kubectl edit svc command
+kubectl get all
+helm uninstall version-1
+
+Chart.yaml  : information about Chart
+values.yaml : Values for Manifest files
+Template    : Its a folder which has all the k8s manifest files.
+
+
+NOTE: values will be refer by Value.yml from template folder
+we use go language for it.
+
+
+================================================================================================
+DAY-15: 18-06-2026: PROBES
+
+
+ Input Parameters
+
+ Parameter           : Description                                  :
+------------------------------------------------------------------------------
+ path                : URL path to check                            :
+ port                : Container port                               :
+ scheme              : HTTP or HTTPS                                :
+ initialDelaySeconds : Wait before first check                      :
+ periodSeconds       : Check interval                               :
+ timeoutSeconds      : Probe timeout                                :
+ successThreshold    : Consecutive successes required               :
+ failureThreshold    : Consecutive failures before marking NotReady :
+
+
+# Kubernetes Liveness Probe Examples
+
+ 1. HTTP Liveness Probe
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-http
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 80
+
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  
+
+Output Healthy:
+kubectl get pod
+  
+
+NAME             READY   STATUS
+liveness-http    1/1     Running
+  
+
+2. TCP Liveness Probe
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-tcp
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+
+    livenessProbe:
+      tcpSocket:
+        port: 80
+
+      initialDelaySeconds: 10
+      periodSeconds: 5
+  
+
+RESULT-1: IF PORT IS 80 SUCCESS
+RESULT-2: IF PORT IS 81 FAIL
+
+
+3. Command Liveness Probe
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-exec
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+
+    command:
+    - sh
+    - -c
+    - touch /tmp/healthy; sleep 10; rm -f /tmp/healthy; sleep 20
+
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  
+
+FIRST IT WILL SUCCESS AFTER 90 SEC IT WILL RESTART
+
+
+READINESS PROBE EXAMPLES
+
+
+1. HTTP Readiness Probe
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-http
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+        scheme: HTTP
+
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 2
+      successThreshold: 1
+      failureThreshold: 3
+  
+
+RESULT : POD WILL BE RUNNING
+  
+
+2. TCP Readiness Probe
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-tcp
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+
+    readinessProbe:
+      tcpSocket:
+        port: 80
+
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  
+
+RESULT-1: IF PORT IS 80 SUCCESS
+RESULT-2: IF PORT IS 81 FAIL
+
+  
+
+  
+
+ 3. Command Readiness Probe
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: readiness-exec
+spec:
+  containers:
+  - name: app
+    image: busybox
+
+    command:
+    - sh
+    - -c
+    - touch /tmp/ready && sleep 30
+
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/ready
+
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  
+
+
+
+BOTH PROBES:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: production-app
+spec:
+  containers:
+  - name: app
+    image: nginx
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 80
+      initialDelaySeconds: 30
+      periodSeconds: 10
+  
+
+
+  
+
+
+: Scenario              : Readiness           : Liveness          :
+
+: App starting          : Not Ready           : No Action         :
+: App healthy           : Ready               : Running           :
+: Database disconnected : Remove from Service : No Restart        :
+: Application hung      : Remove from Service : Restart Container :
+: Crash/Deadlock        : Remove from Service : Restart Container :
+
+    
+Liveness Probe = "Am I still alive?"  
+Readiness Probe = "Can I receive traffic?"  
+Readiness Failure → No Traffic  
+Liveness Failure → Restart Container  
+
+============================================================================================================
+
+DAY-18: 22-06-2026: NETWORKING IN K8S
+
+
+Nslookup (stands for “Name Server Lookup”) used for getting information from the DNS server. 
+It is a network tool for querying the Domain Name System (DNS) to obtain domain name or IP address mapping or any other specific DNS record. It is also used to troubleshoot DNS-related problems.
+
+The resolv.conf file provides the necessary configuration for a Linux system to communicate with DNS servers
+
+
+vim pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dnsutils
+  namespace: default
+spec:
+  containers:
+  - name: dnsutils
+    image: registry.k8s.io/e2e-test-images/agnhost:2.39
+    imagePullPolicy: IfNotPresent
+  restartPolicy: Always
+
+
+
+kubectl exec -i -t dnsutils -- nslookup kubernetes.default
+kubectl exec -ti dnsutils -- cat /etc/resolv.conf
+
+
+
+NETWORK POLICY:
+
+Step 1: Create Pods
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  containers:
+  - name: frontend
+    image: nginx:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend
+  namespace: default
+  labels:
+    app: backend
+spec:
+  containers:
+  - name: backend
+    image: nginx:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db
+  namespace: default
+  labels:
+    app: db
+spec:
+  containers:
+  - name: db
+    image: nginx:latest
+
+
+Step 2: Default Deny All Traffic
+
+vim deny.yml
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+
+
+
+Step 3: Allow Frontend → Backend
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-backend
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+
+  policyTypes:
+  - Ingress
+
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+
+
+Step 4: Allow Backend → DB
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-db
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: db
+
+  policyTypes:
+  - Ingress
+
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: backend
+
+
+kubectl get pods -o wide
+
+kubectl exec -it frontend -- curl backend-pod-ip
+kubectl exec -it backend -- curl backend-pod-ip
+
+==================================================================================================
+
+DAY-19: 23-06-2026: ARGOCD
+LINK: https://argo-cd.readthedocs.io/en/stable/getting_started/
+
+API SERVER: we use to interact with Argo CD through UI, CLI, and CI/CD tools.
+APPLICATION CONTROLLER:  which deploys and manages the application.
+ApplicationSet Controller: is a Controller to manage ApplicationSet custom resource that helps you to deploy multiple applications using a single custom resource.
+REPO SERVER: interacts with Git repositories and pulls the Code
+DEX SERVER: its OIDC provider helps to authenticate, authorize with external identity providers.
+REDIS: Used for caching, makes the request fast and reduces the stress on other components by caching repeated API calls.
+
+
+STEP-1: CREATE CLUSTER TAKE M7I-FLEX LARGE
+
+STEP-2: HELM INSTALLATION:
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+
+
+STEP-3:INSTALL ARGO CD USING HELM
+helm repo add argo-cd https://argoproj.github.io/argo-helm
+helm repo update
+kubectl create namespace argocd
+helm install argocd argo-cd/argo-cd -n argocd 
+kubectl get all -n argocd
+
+
+STEP-4: ACCESS THE UI:
+
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
+access the ui through  NodePort
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+CREATING A NEW APP:
+
+NEW APP
+NAME: APP1
+PROJECT NAME: default
+Sync Policy: Manual
+REPO: https://github.com/devopsbyraham/argocd.git
+PATH: ./
+CLUSTER URL: https://kubernetes.default.svc
+NAMESPACE: default
+CREATE
+
+SYNC
+SYNCHRONIZE
+
+
+
+BINARY METHOD:
+kubectl create namespace argocd
+kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+kubectl get po -n argocd
+kubectl get svc -n argocd
+
+==================================================================================================
+
+DAY-20: 24-06-2026: KUSTOMIZE, CRD, ADMISSION CONTROLLER
+
+
+KUSTOMIZE: used to deploy apps to multiple env and namespaces at same time.
+MAIN FOLDERS:
+1. Base
+2. Overlay
+
+BASE: it has complete manifest files required to deploy app
+kustomization.yaml: it will manage manifest files
+if you give 2 manifest files inside this file it will execute 2 manifest files
+if you give 3 manifest files inside this file it will execute 3 manifest files
+
+
+git clone https://github.com/RAHAMSHAIK007/kustomize.git
+cd kustomize
+apt update && apt install tree
+
+kubectl apply -k base  		: to apply files normally	
+kubectl apply -k overlay/dev    :to apply files on dev env	
+kubectl apply -k overlay/test   :to apply files on test env	
+
+
+CRD: in k8s we can create custom  objects 
+we can extend the k8s api to create objects
+first create crd and later create the object
+
+
+
+# bus-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: buses.example.com  # CRD name = plural + group
+spec:
+  group: example.com       # Custom API group
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                routeNumber:
+                  type: string
+                  description: "The route number of the bus"
+                driverName:
+                  type: string
+                  description: "Name of the driver"
+                passengers:
+                  type: integer
+                  description: "Number of passengers currently on the bus"
+                city:
+                  type: string
+                  description: "Number of passengers currently on the bus"
+  scope: Namespaced
+  names:
+    plural: buses
+    singular: bus
+    kind: Bus
+    shortNames:
+      - bs
+
+
+kubectl get crd
+kubectl describe crd buses.example.com
+
+
+# bus-instance.yaml
+apiVersion: example.com/v1
+kind: Bus
+metadata:
+  name: city-bus-101
+  namespace: default
+spec:
+  routeNumber: "101A"
+  driverName: "Ravi Kumar"
+  passengers: 35
+
+
+
+USES CASES:
+INFRA CREATION (CRD = EKS)
+DATABASES (CRD = RDS)
+API GATEWAY, INGRESS 
+
+
+
+
+ADMISSION CONTROLLER:
+it helps to create/manage the dependencies before a object is created.
+first it check authentication & authorization.
+
+Mutating: modify the objects
+Validating: accept/reject the request
+
+
+kubectl run pod1 --image nginx -n radhika  : failed  because there is no Radhika ns
+
+but if we enable admission controller it works 
+how to enable 
+
+kubectl run pod1 --image nginx -n radhika 
+
+
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --enable-admission-plugins=NodeRestriction,NamespaceAutoProvision
+wait for few mins api pod will recreate 
+
+
+kubectl run pod1 --image nginx -n radhika 
+kubectl run pod1 --image nginx -n tillu 
+kubectl run pod1 --image nginx -n abd 
+kubectl run pod1 --image nginx -n demo 
+
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --enable-admission-plugins=NodeRestriction,NamespaceAutoProvision
+wait for few mins api pod will recreate 
+
+    - --enable-admission-plugins=NodeRestriction,NamespaceAutoProvision,PodSecurity
+
+now without security context pod will not create
+
+==========================================================================================
+
+DAY-21: ECS, ECR
+
+
+FOR WINDOWS:
+
+PRE REQUISITES: GIT, DOCKER, AWS CLI 
+OPEN VS CODE AND BUILD THE DOCKER IMAGE
+
+
+CODE: https://github.com/RAHAMSHAIK007/Zomato-Project.git
+
+STEP-1: CREATE A REPO IN ECR (ECR = DOCKER HUB)
+
+ECR -- > CREATE -- > NAME: SWIGGY -- > SCAN IMAGE -- > CREATE REPO
+
+View push commands
+NOTE: USE ACCESS KEY AND SECRET KEYS FOR AUTHENTICATION
+RUN ALL THE 4 COMMANDS SETP BY STEP TO PUSH IMAGE TO ECR.
+
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 387084400255.dkr.ecr.ap-south-1.amazonaws.com
+
+LOGIN SUCCESS
+
+
+STEP-2. CREATE TASK DEFINATION.	 (TASK DEFINATION = DOCKER COMPOSE)
+TASK DEFINATAION -- > CREATE -- > Task definition family: Netflix -- > AWS Fargate -- > ceate a new role -- > VALUES UPTO YOUR CHOICE -- > CREATE
+
+
+STEP-3. CREATE A CLUSTER BY USING FARGETE. (ECS = DOCKER SWARM)
+ECS -- > CLUSTER -- > CREATE -- > NAME -- > 
+AWS Fargate (serverless) -- > CREATE
+
+
+STEP-4. CREATE SERVICE (ECS SERVICE = SWARM SERVICE)
+
+ECS =-- > CLUSTER --  > SERVICE -- > CREATE -- > FARGATE -- > TASK -- > NETFLIX -- > DESIRED TASKS: 3 -- > LOAD BALANC AND ASG -- > CREATE
+
+NOTE: DELETE TASKS BEFORE DELETE CLUSTER.
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+STEP-1: DO CI AND CREATE IMAGE
+PROJECT REPO: https://github.com/devopsbyraham/gabr1.git
+
+STEP-2: CREATE PRODUCTION GRADE EKS CLUSTER
+EKS CLUSTER REPO: https://github.com/devopsbyraham/eks-cluster.git
+
+
+
+STEP-3: INSTALL HELM 
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+
+STEP-4: INSTALL ARGOCD 
+
+INSTALL ARGO CD USING HELM
+helm repo add argo-cd https://argoproj.github.io/argo-helm
+helm repo update
+kubectl create namespace argocd
+helm install argocd argo-cd/argo-cd -n argocd 
+kubectl get all -n argocd
+
+
+
+EXPOSE ARGOCD SERVER:
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl get all -n argocd
+
+NOTE: GIVE OR CHECK SG FOR PORTS
+
+COPY PASTE DNS TO BROWSER
+ADVANCE 
+LOGIN PAGE
+
+username: admin
+passowd: 
+
+TO GET ARGO CD PASSWORD:
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o yaml 
+decode the above secret (echo -n "data" |  base64 -d)
+
+
+The above command to provide password to access argo cd
+
+IN REAL FOR DEV &TEST ENV WE CAN USE 100% AUTOMATED DEPLOYENTS
+FOR PRODUCTION WE PERFER SEMI-AUTOMATED.
+ 
+STEP-5: DEPLOY THE APPLICATION
+
+NEW APP
+NAME: APP1
+PROJECT NAME: default
+Sync Policy: Manual
+REPO: https://github.com/devopsbyraham/argocd.git
+PATH: ./
+CLUSTER URL: https://kubernetes.default.svc
+NAMESPACE: default
+CREATE
+
+SYNC
+SYNCHRONIZE
+
+STEP-6: INSTALL PROMETHEUS & GRAFANA
+
+
+DOWNLOADING CHARTS PROMETHEUS & GRAFANA:
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+
+
+UPDATE HELM CHART REPOS:
+helm repo update
+helm repo list
+
+CREATE PROMETHEUS NAMESPACE:
+kubectl create namespace prometheus
+kubectl get ns
+
+INSTALL PROMETHEUS:
+helm template prometheus-community/prometheus
+
+helm install prometheus prometheus-community/prometheus --namespace prometheus --set alertmanager.persistentVolume.storageClass="gp2" --set server.persistentVolume.storageClass="gp2"
+kubectl get all -n prometheus
+
+CREATE GRAFANA NAMESPACE:
+kubectl create namespace grafana
+
+INSTALL GRAFANA:
+helm template grafana grafana/grafana
+
+
+helm install grafana grafana/grafana --namespace grafana  --set adminPassword='RahamDevOps' --set  service.type=LoadBalancer
+
+kubectl get all -n grafana
+kubectl get svc -n grafana
+
+
+
+NOTE: ALLOW PORTS ON SG
+
+Copy the EXTERNAL-IP and paste in browser
+
+Go to Grafana Dashboard → Add the Datasource → Select the Prometheus
+add the below url in Connection and save and test
+http://prometheus-server.prometheus.svc.cluster.local/
+
+Import Grafana dashboard from Grafana Labs
+grafana dashboard → new → Import → 14623 → load → select prometheus → import
+
+
+
+: Dashboard : Purpose                         :
+:        :                     - :
+: 15757     : Cluster Overview                :
+: 15758     : Pods & Namespaces               :
+: 15759     : Node Monitoring                 :
+: 15760     : Deployment & Replica Monitoring :
+: 1860      : Node Infra Metrics              :
+: 315       : Full K8s Visibility             :
+:11454      : for pv and pvcs	              :
+:14623      : k8s overview db		      :
+
+
+
+
+
+
+
+Global Infrastructure
+│
+├── US Region
+│   ├── Production Cluster A
+│   ├── Production Cluster B
+│   ├── GPU Inference Cluster
+│   ├── Monitoring Cluster
+│   └── Internal Services Cluster
+│
+├── Europe Region
+│   ├── Production Cluster
+│   ├── GPU Cluster
+│   └── Monitoring Cluster
+│
+├── Asia Region
+│   ├── Production Cluster
+│   ├── GPU Cluster
+│   └── Monitoring Cluster
+│
+└── Additional regions...
