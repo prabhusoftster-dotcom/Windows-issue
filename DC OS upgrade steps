@@ -1,0 +1,14 @@
+
+Create one new account in old server and add to administrator:
+--------------------------------------------------------------
+ 
+1.) Build a new server with diff hostname & ip/ join to domain
+2.) On old DC before demote - Check if holds any FSMO roles and move to another available DC
+3.) Demote the DC completely, Delete from sites and service, Delete AD object also /untick the network connection,power-off the vm atlast
+4.) On new build move the server to Workgroup-restart and once up change the ipaddress then computername/description - reboot
+5.) now join the new vm to domain back
+6.) Install AD & DNS services - restart / Once VM is up from Add or remove roles- Click the promote DC flag at the top of server manger window
+7.) TO promote the DC -Choose 1 option to add DC to existing domain
+8.) For replication it takes time 25/30 mins
+9.) In DNS console - Hostname-RC-properties- update the forwarders tab with all infoblox ip
+10.) If any ip failed to resovle open FW request for DNS port 53
