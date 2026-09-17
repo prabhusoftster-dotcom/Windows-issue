@@ -1,0 +1,1919 @@
+CHAPTER-1: INTRODUCTION TO IAC
+
+STEP-1: CREATE EC2 IN AWS (CLOUD -- > WINDOWS)
+STEP-2: INSTALL TERRAFORM
+
+sudo yum install -y yum-utils shadow-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+sudo yum install terraform -y
+
+
+STEP-3: PERMISSION FOR TERRAFORM (USING ROLE)
+
+IAM
+Roles
+Create role
+Use case : EC2
+NEXT
+AmazonEC2FullAccess
+AmazonS3FullAccess
+Next
+Name: Terraformrole
+Create
+
+STEP-4: ATTACHING ROLE TO SERVER
+SELECT SERVER
+ACTIONS
+SECURITY
+MODIFY IAM ROLE
+SELECT THE ROLE
+UPDATE THE ROLE
+
+
+INFRASTRUCTURE:
+resources used to run our application on cloud.
+ex: ec2, s3, elb, vpc, Asg --------------
+
+
+in general we used to deploy infra on manual 
+
+Manual:
+1. time consume
+2. Manual work
+3. committing mistakes
+
+Automate -- > Terraform -- > code -- > hcl (Hashicorp configuration languge)
+
+
+WHAT IS TERRAFORM:
+its a tool used to make infrastructure automation.
+its a free and not open source.
+its platform independent.
+it comes on the year 2014.
+who: Mitchel Hashimoto 
+owned: Hashicorp -- > recently IBM is maintaining.
+terraform is written on the go language.
+We can call terraform as IAC TOOL.
+it is Cloud Agonistic (it can used to work with any cloud and even on prem)
+it can manage things from onprem also.
+
+
+HOW IT WORKS:
+terraform uses code to automate the infra.
+we use HCL : HashiCorp Configuration Language.
+
+IAC: Infrastructure as a code.
+
+Code --- > execute --- > Infra 
+
+ADVANTAGES:
+1. Reusable 
+2. Time saving
+3. Automation
+4. Avoiding mistakes
+5. Dry run (Dont Repeat Yourself)
+
+CLOUD ALTERNATIVES:
+CFT = AWS
+ARM = AZURE
+GDE = GOOGLE
+
+TERRAFROM = ALL CLOUDS
+
+SOME OTHER ALTERNATIVES:
+PULUMI
+OpenTofu
+ANSIBLE
+CHEF
+PUPPET
+
+
+
+TERRAFORM VS ANSIBLE:
+Terraform will create server
+and these servers will be configure by ansible.
+
+
+INSTALLING TERRAFORM:
+
+STEP-1: INSTALLING TERRAFORM
+
+sudo yum install -y yum-utils shadow-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+sudo yum -y install terraform
+terraform --version
+
+NOTE: TERRAFORM IS 3RD PARTY TOOL, SO WE NEED TO GIVE PERMISSION TO TERRAFORM TO WORK WITH AWS
+CREATE A ROLE AND ATTACH TO EC2
+
+STEP-2: GIVING IAM ROLE
+
+aws configure (or) give a role
+check ll .aws/ for the configuration 
+
+MAIN ITEMS IN FILE:
+blocks
+lables (name, type of resource)
+arguments
+
+
+Configuration files:
+it will have resource configuration.
+here we write inputs for our resource 
+based on that input terraform will create the real world resources.
+extension is .tf 
+
+mkdir terraform
+cd terraform
+
+vim main.tf 
+
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+ami = "ami-03eb6185d756497f8"
+instance_type = "t2.micro"
+}
+
+I : INIT
+P : PLAN
+A : APPLY
+D : DESTROY
+
+TERRAFORM COMMANDS:
+terraform init	: initialize the provider plugins on backend
+it will store information of plugins in .terraform folder
+without plugins we cant create resources.
+each provider will have its own plugins.
+we can get every provider from terraform registry.
+once plugins are downloaded we should not need to run init every time.
+
+PLUGINS: ARE RESPONSIBLE TO CREATE RESOURCES IN CLOUD.
+
+terraform plan	: to create an execution plan
+it will take inputs given by users and plan the resource creation
+if we haven't given inputs for few fields it will take default values.
+
+terraform apply : to create resources
+as per the given inputs on configuration file it will create the resources in real word.
+
+terrafrom destroy : to delete resources
+
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+count = 5
+ami = "ami-03eb6185d756497f8"
+instance_type = "t2.micro"
+}
+
+
+terraform apply --auto-approve
+terraform destroy --auto-approve
+
+
+STATE FILE: used to store the resource information which is created by terraform
+to track the resource activities
+in real time entire resource info is on state file.
+we need to keep it safe & Secure
+if we lost this file we cant track the infra.
+Command:
+terraform state list
+
+terraform target: used to destroy the specific resource 
+terraform state list
+single target: terraform destroy -auto-approve -target="aws_instance.one[3]"
+multi targets: terraform destroy -auto-approve -target="aws_instance.one[1]" -target="aws_instance.one[2]"
+
+
+TERRAFORM FMT: 
+used to give allignment and indentation for terraform files.
+rewrite configuration files to a canonical format and style.
+terraform fmt
+
+
+
+
+
+
+=======================================================================================================
+CLASS-2: 23-9-2025
+
+META ARGUMENTS:
+
+PARALLELISM: by default terraform follows parallelism.
+it will execute all the resources at a time.
+by default parallelism limit is 10.
+Terraform can create maximum 10 resources at a time.
+terraform apply -auto-approve -parallelism=1
+NOTE: IT WILL APPLICALBLE FOR BOTH APPLY & DESTROY.
+
+
+DEPENDS_ON: one resource creation will be depending on other.
+this is called explicit dependency.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-046d18c147c36bef1"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham-server"
+  }
+}
+
+resource "aws_s3_bucket" "two" {
+  bucket     = "terraformbucketabcd123"
+  depends_on = [aws_instance.one]
+}
+
+2. COUNT: used to create similar objects.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  count         = 3
+  ami           = "ami-046d18c147c36bef1"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "dev-server-${count.index+1}"
+  }
+}
+
+NOTE: it wont create resources with different configs.
+
+3. FOR_EACH: it is a loop used to create resources.
+we can pass different configuration to same code.
+it will create resource with less code.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  for_each      = toset(["dev-server", "test-server", "prod-server"])
+  ami           = "ami-046d18c147c36bef1"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "${each.key}"
+  }
+}
+
+
+
+4. LIFECYCLE: 
+
+PREVENT DESTROY: used to prevent the resource to not be deleted.
+it is bool.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-046d18c147c36bef1"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham-server"
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+NOTE: CHECK WITH TERRAFORM APPLY
+
+IGNORE CHANGES:
+when user modify anything on current state manually changes will be ignored.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-046d18c147c36bef1"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham-server"
+  }
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+NOTE: MODIFY NAME MANUALLY AND CHECK WITH TERRAFORM APPLY
+
+CREATE BEFORE DESTROY:
+by default when we modify some properties terraform will first destroy old server and create new server later.
+
+if we follow create before destroy lifecycle the new resource will create first
+and later old resource is going to be destroyed.
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-0208b77a23d891325"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham-server"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+
+NOTE: CHNAGE AMI ID AND GIVE APPLY
+
+
+=============================================================================================================================
+
+TERRAFORM IMPORT
+when we create resource manually terraform wont track that resource.
+Import command can used to import the resource which is created manually.
+can only import one resource at a time (FROM CLI)
+it can import both code to config file and state file.
+FOR STATE FILE: terraform import aws_instance.one (not prefarable)
+
+FIRST CREATE A MANUAL SERVER.
+
+cat main.tf
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+import {
+  to = aws_instance.one
+  id = "i-0c23bdc1b7b73d61c"
+}
+
+FOR STATEFILE & CODE: 
+terraform plan -generate-config-out=ec2.tf
+NOTE: DELETE LINE 20 AND 21 FROM ec2.tf
+terraform apply -auto-approve
+terraform state list
+terraform destroy -auto-approve
+
+TERRAFORM TAINT
+It allows for you to manually mark a resource for recreation
+in real time some times resources fails to create so to recreate them we use taint
+in new version we use -replace option
+TO TAINT: terraform taint aws_instance.one[0]
+TO UNTAINT: terraform untaint aws_instance.one[0]
+terraform state list
+terraform taint aws_instance.one[0]
+terraform apply --auto-approve 
+
+TERRAFORM REPLACE:
+terraform apply --auto-approve -replace="aws_instance.one[0]"
+
+
+CODE:
+statefilebucketfroterraform
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  count         = 2
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham"
+  }
+}
+
+TERRAFORM VALIDATE:
+used validates the configuration files in your working directory.
+it will show error when we havent given the values for variables.
+command: terraform validate
+
+TERRAFORM PLAN:
+
+used to save plan in a file for future reference.
+command: terraform plan -out myplan
+  to apply    : terraform apply myplan
+  to destroy: terraform plan -destroy
+
+
+TERRAFORM REFRESH
+
+This command will be use to refresh the state file.
+terraform compares the current state to desired state, it it found any changes 
+ on the current state it will update values to state file.
+when we run plan, apply or destroy refresh will perform automatically.
+if a server is manually created running terraform apply -refresh-only would detect those changes and update the state file to reflect the current state of the resource, but it won't attempt to change the infrastructure to match the Terraform configuration.
+if you dont want to refresh while apply & destroy use 
+ terraform apply/destroy -refresh=false
+
+
+TERRAFORM DEBUGGING
+Terraform automates the infrastructure.
+issues like misconfigurations or dependency errors can occur. 
+Debugging helps understand issues and fix them efficiently.
+You can set TF_LOG to one of the log levels TRACE, DEBUG, INFO, WARN or ERROR to change the verbosity of the logs, with TRACE being the most verbose.
+
+export TF_LOG=TRACE 
+export TF_LOG_PATH="logs.txt"
+terraform init
+terraform plan
+
+======================================================================================================================================
+
+1. what is default backend: local
+2. command to change the backend : terraform init -migrate-state
+3. why to lock state file: to prevent from corruption
+4. when state file will lock: when two people work on same state file parallely
+5. does local backend support state lcoking: no
+6. why use s3 : to lock state file automatically.
+
+
+TERRAFORM STATE FILE
+Terraform Stores the infrastructure infromation on state file.
+it will automatically refreshed when we run plan, apply & destroy.
+In Terraform, a backend is a configuration that determines how and where Terraform stores its state file and how it manages operations like apply, plan, and destroy.
+ By default Terraform uses local backend. 
+it stores state file in terraform.tfstate in local folder.
+it stores information in json format.
+if we delete any resource it stores infromation in terraform.tfstate.backup.
+
+
+TERRAFORM STATE FILE LOCKING
+in Real time once we complete our work we need to lock state file.
+it ensures that only one operation can be executed at a time. 
+once you lock state file you cant modify the infrastructure anymore.
+When two people working on state file at a time it will be locked automatically.
+unfortunately if two people runs apply at same time unpredictable results, like creating duplicate resources or destroying the wrong infrastructure.
+Not all Terraform backends support locking.
+
+
+Terraform used local backend to manage state file.
+But in that local backend only one person can able to access it.
+in Real time it’s often necessary to have a centralized, consistent, and secure storage mechanism for the state file. 
+Amazon S3 is a popular choice for this, and when combined with DynamoDB for locking, it ensures safe, consistent operations.
+TERRAFORM S3 BACKEND
+
+ADVANTAGES
+Global Access
+Team Collaboration
+Secure and Scalable
+Centralized State Management
+State File Versioning
+Disaster Recovery
+
+WHY LOCKING HAPPEND
+
+when 2 developers  work on the same project with same state file then  the locking will be happend.
+if state file is locked only first operation execute and second operation waits.
+to remove state lock use: terraform force-unlock <LOCK_ID>
+after adding dynamodb run:  terraform init -reconfigure
+
+Add that block to existing code and run terraform init -upgrade
+dynamodb -- > create table -- > Partition key: LockID -- > create
+now after apply state file will go to s3 bucket
+dev-1 type destroy and dev-2 type apply now state file locked.
+you can check lock-id in new items of table.
+once destroy done for dev-1 state file will be unlocked and dev-2 can work.
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+terraform {
+  backend "s3" {
+    bucket = "mybucket"
+    key    = "path/to/my/key"
+    region = "us-east-1"
+    use_lockfile = true
+  }
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "dev-server"
+  }
+}
+
+
+
+MIGRATING FROM  S3 TO LOCAL BACKEND
+
+if we want state file to back on local use below method.
+remove backend code from main.tf 
+run terraform init -migrate-state
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+
+resource "aws_instance" "one" {
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "dev-server"
+  }
+}
+
+
+TERRAFORM REFRESH
+
+This command will be use to refresh the state file.
+terraform compares the current state to desired state, it it found any changes 
+       on the current state it will update values to state file.
+when we run plan, apply or destroy refresh will perform automatically.
+if a server is manually created running terraform apply -refresh-only would detect those changes and update the state file to reflect the current state of the resource, but it won't attempt to change the infrastructure to match the Terraform configuration.
+if you dont want to refresh while apply & destroy use 
+        terraform apply/destroy -refresh=false
+
+
+TERRAFORM BACKEND BLOCK
+
+By default there is no backend configuration block within Terraform configuration Because Terraform will use it's default backend - local 
+This is why we see the terraform.tfstate file in our working directory. 
+FOR PARTIAL BACKEND: 
+        path = "state_data/terraform.dev.tfstate"
+FROM CLI: 
+        terraform init -backend-config="path=state_data/terraform.prod.tfstate" -migrate-state
+If want we can specify multiple partial backends too.
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+terraform {
+  backend "local" {
+    path = "/tmp/abc.tfstate"
+  }
+}
+
+
+resource "aws_instance" "one" {
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "dev-server"
+  }
+}
+
+
+TERRAFORM STATE COMMANDS
+
+The terraform state command is used for advanced state management.
+There are some cases where you may need to modify the Terraform state.
+Rather than modify the state directly use these commands.
+terraform state list : to list the resources
+terraform state show aws_subnet.two : to show specific resource info
+terraform state mv aws_subnet.two aws_subnet.three : to rename block
+terraform state rm aws_subnet.three : to remove state information of a resource
+terraform state pull : to pull state file info from backend
+
+===============================================================================================================================================
+
+=====================================================================================================
+
+PROVIDER BLOCK:
+
+By default provider plugins in terraform change version for every few weeks.
+when we run init command, it download latest plugins always.
+some code will not work with old plugins, so we need to update them.
+To get latest provider plugins : https://registry.terraform.io/browse/providers.
+when you add a new provider terraform init is must.
+terraform providers: to list the providers which required to run code.
+to create infra on any cloud all we need to have is provider.
+
+TYPES:
+1. OFFICIAL : MANAGED BY TERRAFORM
+2. PARTNER  : MANAGE BY 3RD PATRY COMPANY
+3. COMMUNITY: MANAGED BY INDIVIDUALS
+
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = ">5.70.0"
+    }
+  }
+}
+
+
+MULTI PROVIDERS:
+
+terraform {
+  required_version = ">=1.9.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">5.70.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "4.9.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "6.10.0"
+    }
+  }
+}
+
+TERRAFORM BLOCK:
+
+This block is used to set global configurations and settings for the Terraform.
+It usually includes details such as required providers, backend configuration, and version constraints.
+terraform -v
+terraform -version
+terraform --version
+
+
+
+TERRAFORM LOCAL BLOCK:
+
+A local block is used to define  values.
+if a value is repeating multiple times we can define it here.
+This makes our code cleaner and easier to understand.
+simply define value once and use for mutiple times.
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {
+env = "test"
+}
+
+resource "aws_vpc" "one" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "${local.env}-vpc"
+  }
+}
+
+resource "aws_subnet" "two" {
+  vpc_id     = aws_vpc.one.id
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "${local.env}-subent"
+  }
+}
+
+resource "aws_instance" "three" {
+  subnet_id     = aws_subnet.two.id
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "${local.env}--server"
+  }
+}
+
+
+TERRAFORM COMMENTS:
+We use comments to make others code to understand easily.
+Terraform supports three different syntaxes for comments.
+#   -- > single line comment
+//  -- > single line comment
+/*   */  -- > multi line comment
+Note: if we put comments for code, terraform thinks code is not existed and it will destroy the resource.
+
+TLS PROVIDER:
+
+it provides utilities for working with Transport Layer Security keys & certificates. 
+It provides resources that allow private keys, certificates & CSR.
+Add tls on your own and try this below code.
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "tls_private_key" "rsa-4096-example" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+
+resource "local_file" "private_key_pem" {
+  content  = tls_private_key.rsa-4096-example.private_key_pem
+  filename = "devops.pem"
+}
+
+
+=========================================================================================
+
+TERRAFORM VARIABLES
+
+Terraform variables are values which we can change without editing the whole Terraform code every time.
+It makes your code reusable (same code, different ENV— dev, test, prod)
+It makesyour code clean (no hardcoded values)
+It makes it flexible (you can pass values at runtime)
+
+TERRAFORM VARIABLES TYPE:
+Input Variables     : Values Given By the user 
+Output Variables    : Values Given By the Terraform
+Local Variables     : Temporary variables within Terraform
+
+DATA TYPES:
+
+Type	Description			Example
+=================================================================
+string	Text value			"""dev"", ""us-east-1"""
+number	Numeric value			"2, 300"
+bool	True or False			"true, false"
+list	Ordered collection of values	"[""t2.micro"", ""t3.micro""]"
+map	Key-value pairs			"{ env = ""dev"", tier = ""1"" }"
+object	Group of named attributes	"{ name = ""app"", size = 2 }"
+tuple	Ordered list of diff data types	"[""app"", 2, true]"
+
+
+STRING & NUMBER:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "raham" {
+  count         = var.instance_count
+  ami           = "ami-04aa00acb1165b32a"
+  instance_type = var.instance_type
+  tags = {
+    Name = "Raham"
+  }
+}
+
+variable "instance_count" {
+default = 3
+}
+
+variable "instance_type" {
+default = "t2.micro"
+}
+
+
+
+LIST:
+
+Main.tf
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  count         = length(var.instance_type)
+  ami           = "ami-0de716d6197524dd9" # Example AMI ID, replace with a valid one
+  instance_type = var.instance_type[count.index]
+  tags = {
+    Name = var.instance_name[count.index]
+  }
+}
+
+
+
+Varibale.tf
+
+variable "instance_type" {
+  type    = list(string)
+  default = ["t2.micro", "t2.small", "t2.medium", "t2.large"]
+}
+
+variable "instance_name" {
+  type    = list(string)
+  default = ["dev-server", "test-server", "uat-server", "prod-server"]
+
+}
+
+
+MAP:
+
+Main.tf
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami           = "ami-0de716d6197524dd9" # Example AMI ID, replace with a valid one
+  instance_type = "t2.micro"              # Default instance type, can be overridden
+  tags          = var.tags
+}
+
+
+Varibale.tf
+
+variable "tags" {
+  type = map(string)
+  default = {
+    Name        = "MyInstance"  # Default tag value, can be overridden
+    Environment = "Development" # Example additional tag
+    Client      = "TCS"
+  }
+}
+
+TERRAFORM TFVARS:
+
+When we have multiple configurations for terraform to create resource
+we use tfvars to store different configurations.
+Pass the tfvars  While apply Command to take the values of that file.
+NOTE: BY DEFAULT TERRAFORM WILL PICK VALUES FROM TERRAFORM.TFVARS 
+if you don't pass any tfvars files terraform will pick values from terraform.tfvars.
+ALTERNATE NAME: terraform.tfvars.json
+
+ALTERNATE NAME:
+terraform.tfvars.json
+
+cat main.tf.   
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+count = var.instance_count
+ami = "ami-0e001c9271cf7f3b9"
+instance_type = var.instance_type
+tags = {
+Name = var.instance_name
+}
+}
+
+cat variable.tf
+variable "instance_count" {
+}
+
+variable "instance_type" {
+}
+
+variable "instance_name" {
+}
+
+cat dev.tfvars
+instance_count = 1
+
+instance_type = "t2.micro"
+
+instance_name = "dev-server"
+
+cat test.tfvars
+instance_count = 2
+
+instance_type = "t2.medium"
+
+instance_name = "test-server"
+
+cat variable.tfvars
+	
+
+terraform apply -auto-approve -var-file="dev.tfvars"
+terraform apply -auto-approve -var-file="test.tfvars"
+terraform apply -auto-approve -var-file="prod.tfvars"
+
+TERRAFORM CLI
+
+METHOD-1:
+terraform apply --auto-approve
+terraform destroy --auto-approve
+
+METHOD-2:
+terraform apply --auto-approve -var="instance_type=t2.micro" 
+terraform destroy --auto-approve -var="instance_type=t2.micro"
+
+NOTE: If you want to pass single variable from cli you can use -var 
+form multiple variables from cli create terraform .tfvars files and use -var-file.
+
+env variables:
+
+A Terraform environment variable is a key-value pair set within the environment where Terraform is running.
+
+LINUX & MAC:
+export TF_VAR_region=us-east-1
+export TF_VAR_instance_type='{ "t2.micro", "t2.medium" }'
+export TF_VAR_tagmap='{ Environment = "dev", Project = "demo" }'   
+WINDOWS:
+$env:TF_VAR_instance_type = "t2.micro"
+$env:TF_VAR_instance_count = 1
+$env:TF_VAR_instance_name = "abcd"
+
+
+VARIABLE PRECEDENCE
+
+DEFINES THE LEVEL PRIORITY FOR VARIABLES IN TERRAFORM
+TERRAFORM WILL PICK THE VARIABLES BY BELOW ORDER
+
+        1. CLI
+        2. AUTO.TFVARS
+        3. TERRAFORM.TFVARS.JSON
+        4. TERRAFORM.TFVARS
+        5. ENV VARIABLE
+        6. VARIABLE.TF
+
+
+WORKSPACES:
+Terraform workspaces allow you to maintain multiple environments 
+       (e.g., development, testing, production) 
+using the same Terraform configuration but with different states. 
+Each workspace has its own state file (terraform.tfstate.d folder)
+ resources created/managed in one workspace do not affect other workspaces.
+the default workspace in Terraform  is default 
+Each workspace is isloated (seperated with each other)
+
+
+terraform workspace list : to list the workspaces
+terraform workspace new dev : to create workspace
+terraform workspace show : to show current workspace
+terraform workspace select dev : to switch to dev workspace
+terraform workspace delete dev : to delete dev workspace
+
+    NOTE:
+       1. we need to empty the workspace before delete
+       2. we cant delete current workspace, we can switch and delete
+       3. we cant delete default workspace
+
+EXECUTION:
+NOTE: TAKE CODES FROM TFVARS CONCEPT.
+
+terraform workspace new dev
+terraform apply -auto-approve -var-file="dev.tfvars"
+
+terraform workspace new test
+terraform apply -auto-approve -var-file="test.tfvars"
+
+terraform workspace new prod
+terraform apply -auto-approve -var-file="prod.tfvars"
+
+
+FOR DELETION:
+
+terraform destroy -auto-approve -var-file="prod.tfvars"
+terraform workspace select test
+terraform workspace delete prod
+
+terraform destroy -auto-approve -var-file="test.tfvars"
+terraform workspace select dev
+terraform workspace delete test
+
+terraform destroy -auto-approve -var-file="dev.tfvars"
+terraform workspace select default
+terraform workspace delete dev
+
+
+TERRAFORM CLI: 
+
+cat main.tf
+provider "aws" {
+}
+
+resource "aws_instance" "one" {
+count = var.var.instance_name
+ami = "ami-00b8917ae86a424c9"
+instance_type = var.instance_type
+tags = {
+Name = var.instance_name
+}
+}
+
+cat variable.tf
+variable "instance_count" {
+}
+
+variable "instance_type" {
+}
+
+
+variable "instance_name" {
+}
+
+
+METHOD-1:
+terraform apply --auto-approve
+terraform destroy --auto-approve
+
+METHOD-2:
+terraform apply --auto-approve -var="instance_type=t2.micro" 
+terraform destroy --auto-approve -var="instance_type=t2.micro"
+
+NOTE: If you want to pass single variable from cli you can use -var or if you want to pass multiple variables from cli create terraform .tfvars files and use -var-file.
+
+
+TERRAFORM ENV VARS:
+
+A Terraform environment variable is a key-value pair set within the environment where Terraform is running.
+Used  to specify the location of the Terraform configuration files, set provider credentials, or define backend configurations.
+
+LINUX & MAC:
+export TF_VAR_region=us-east-1
+export TF_VAR_instance_type='{ "t2.micro", "t2.medium" }'
+export TF_VAR_tagmap='{ Environment = "dev", Project = "demo" }'   
+
+WINDOWS:
+$env:TF_VAR_instance_type = "t2.micro"
+$env:TF_VAR_instance_count = 1
+$env:TF_VAR_instance_name = "abcd"
+
+
+DYNAMIC BLOCK:
+it is used to reduce the length of code and used for reusabilty of code in loop.
+
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {
+  ingress_rules = [{ port = 443 }, { port = 80 }, { port = 22 }]
+}
+
+
+resource "aws_security_group" "allow_tls" {
+  name        = "terra sg"
+  description = "Allow TLS inbound traffic"
+
+  dynamic "ingress" {
+    for_each = local.ingress_rules
+    content {
+      description = "*"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  tags = {
+    Name = "terra sg"
+  }
+}
+
+
+
+
+=================================================================================================================================
+
+MODULES:
+it divides the code into folder structure.
+Modules are group of multiple resources that are used together.
+This makes your code easier to read and reusable across your organization.
+we can publish modules for others to use.
+each module will be having sperate plugins.
+modules plugins will be store on .terraform/modules/
+
+TYPES:
+Root Module: This is the main  directory where Terraform commands are run. 
+All Terraform configurations belong to the root module.
+
+Child Modules: These modules are called by other modules.
+
+yum install tree -y
+
+.
+├── main.tf
+├── modules
+│   ├── my_instance
+│   │   └── main.tf
+│   ├── s3_module
+│   │   └── main.tf
+│   └── vpc_module
+│       └── main.tf
+
+CODE:
+
+cat main.tf
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+
+module "vpc" {
+  source = "./modules/vpc_module"
+}
+
+module "ec2" {
+  source = "./modules/my_instance"
+}
+
+module "s3" {
+  source = "./modules/s3_module"
+}
+
+
+mkdir -p modules/my_instance/
+vim modules/my_instance/main.tf
+resource "aws_instance" "one" {
+  ami           = "ami-0ddc798b3f1a5117e"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "module-server"
+  }
+}
+
+
+modules/s3_module/
+vim modules/s3_module/main.tf
+resource "aws_s3_bucket" "example" {
+  bucket = "rahamdemo-tf-test-bucket"
+}
+
+cat modules/vpc_module/main.tf
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "module-vpc"
+  }
+}
+
+MODULE INPUT & OUTPUTS:
+We can add Input and Output Blocks for Terraform Modules 
+Root module can refer both variables & values of child modules.
+Child modules cant refer variables, but it can refer its values.
+
+
+├── main.tf
+├── modules
+│   └── myec2
+│       ├── main.tf
+│       ├── output.tf
+│       └── variable.tf
+
+
+cat main.tf
+provider "aws" {
+region = "us-east-1"
+}
+
+module "server" {
+source = "./modules/myec2"
+}
+
+output "module_output" {
+value = module.server.public_ip
+}
+
+
+cat modules/myec2/main.tf
+resource "aws_instance" "one" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  tags = {
+    Name = var.instance_name
+  }
+}
+
+cat modules/myec2/variable.tf
+variable "ami" {
+  default = "ami-0ddc798b3f1a5117e"
+}
+
+variable "instance_type" {
+  default = "t2.micro"
+}
+
+variable "instance_name" {
+  default = "module-server"
+}
+
+cat modules/myec2/output.tf
+output "public_ip" {
+  value = aws_instance.one.public_ip
+}
+
+
+PUBLIC MODULES:
+
+The module must be on GitHub and must be a public repo.
+NAMING FORMAT: terraform-<provider>-<name> (terraform-aws-ec2-instance)
+must have a description.
+ module structure will be main.tf, variables.tf, outputs.tf.
+x.y.z tags for releases.
+
+
+TERRAFORM GRAPH:
+it shows the relationships between objects in a Terraform configuration.
+using the DOT language.
+once create infra run the command: terraform graph
+Go to Google -- > Graphwiz online & copy paste the code
+
+CODE:
+
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_vpc" "one" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "dev-vpc"
+  }
+}
+
+resource "aws_subnet" "two" {
+  vpc_id     = aws_vpc.one.id
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "dev-subent"
+  }
+}
+
+resource "aws_instance" "three" {
+  subnet_id     = aws_subnet.two.id
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "dev-server"
+  }
+}
+
+NAME: Graphwiz online
+
+
+EXAM PATTREN:
+
+CHAPTERS	: 9 
+TYPE		: MCQ
+MODE		: ONLINE (PROCTURED)
+FEE		: 70 $
+
+TOTAL Q.NO	: 57
+PASS		: 70% (40)
+MY QUESTIONS	: 50
+TIME		: 60 MINS
+VALIDITY	: 2 YEARS
+RESULT		: NEXT MIN 
+
+
+
+========================================================================================
+
+HCP CLOUD:
+
+HCP means HashiCorp Cloud Platform  
+it is a managed platform to automate cloud infrastructure.
+it provide privacy, security and isloation.
+it supports multiple providers like AWS, Azure, and Google Cloud. 
+it offers a suite of open-source tools for managing infrastructure, including Terraform, Vault, Consul, and Nomad. 
+We can use Different Code Repos for a Project.
+We can use Variable sets to apply same variables to all the workspaces.
+
+ACCOUNT CREATION:
+
+ACCONT-1: GITHUB -- > TO STORE CODE
+CREATE A GITHUB ACCOUNT (https://github.com/ -- > singup -- > username,password,email)
+create repo -- > name -- > create -- > add new file -- > write terraform code -- >  commit
+
+
+ACCONT-2: HCP
+
+Go to google & type : HCP CLOUD ACCOUNT SIGNIN
+COTINUE WITH GITHUB
+AUHORIZE
+CLICK CHECK BOXES -- > CONTINUE
+
+CREATE AN ORGINIZATION
+CLICK ON TERRAFORM
+CONTINUE TO HCP
+CONTINUE WITH HCP ACCOUNT
+
+CREATE ORG : NAME: SWIGGY
+TYPE: PERSONAL
+
+CREATE YOUR WORKSPACE
+Version Control Workflow
+INTEGRATE YOUR VCS  -- > GITHUB -- > SELECET REPO -- > NEXT -- > CONTINUE TO WORKSPACE
+CONFIGURE VARAIBLES -- > ADD VARIABLE
+
+AWS_ACCESS_KEY_ID : VALUE: Environment variable -- >  SENSITIVE -- > SAVE 
+AWS_SECRET_ACCESS_KEY: Environment variable -- > SENSITIVE -- > SAVE 
+NOTE: MARK THEM AS ENV VARIBALE AND MAKE SURE NO SPACES ARE GIVEN
+
+RUNS -- > NEW RUN -- > START  -- > confirm and apply
+IT WILL AUTOMATICALLY PLAN & WE NEED TO APPLY BY MANUAL
+SECOND TIME WHEN WE CHANGE CODE IT WILL AUTOMATICALLY PLAN  
+PLAN & APPLY
+DESTROY
+
+Cost Estimation policy:
+Cost Estimation policy: we can estimate the cost of infra before we create it.
+by default this feature is disable, we need to enable 
+click on terraform logo --  > orginization -- > settings -- > Cost Estimation -- > enable
+
+
+SENTINEL POLICY: ITS A POLICY AS A CODE.
+BY THIS SENTINEL POLICY WE CAN WRITE OUR OWN CONDITIONS.
+IT WILL CHECK THE CONDITION OF RESOURCE BEFORE IT CREATED.
+IF CONDITION IS SATISFIED IT WILL CREATE RESOURE, OTHERWISE IT WONT.
+EX: TAGS, VERIFIED AMIS, SG --
+
+TERRAFORM LOGO -- > ORG -- > SETTINGS -- > POLICY 
+
+
+
+
+TERRAFORM CLOUD FEATURES:
+1. Workspaces
+2. Projects
+3. Runs
+4. Variables and Variable Sets
+5. Policies and Policy Sets
+6. Run Tasks
+7. Single Sign-On (SSO)
+8. Remote State
+9. Private Registry
+10. Agents
+11. Role-Based Access Control
+12. Version Control Integration
+13. Observability
+
+TERRAFORM CLOUD ENTERPISE FEATURES:
+Private Module Registry: Includes a private registry for sharing modules securely across teams.
+Policy as Code: Integrates Sentinel for enforcing policies during provisioning.
+Enhanced Automation: Offers advanced run triggers, notifications, and support for custom workflows.
+
+Multi-Organization Support: Allows multiple teams or departments to manage their own infrastructure within a single account.
+Advanced Collaboration: Provides role-based access controls and team management features, allowing for fine-grained permissions.
+Enhanced Security: Features like SSO (Single Sign-On), audit logs, and compliance tools.
+
+TO DELETE RESOURCES:
+SETTINGS -- > DESTRUCTION AND DELETION -- > DELETE QUEUE
+
+Cost Estimation policy:
+Cost Estimation policy: we can estimate the cost of infra before we create it.
+by default this feature is disable, we need to enable 
+click on terraform logo --  > orginization -- > settings -- > Cost Estimation -- > enable
+
+
+SENTINEL POLICY: ITS A POLICY AS A CODE.
+BY THIS SENTINEL POLICY WE CAN WRITE OUR OWN CONDITIONS.
+IT WILL CHECK THE CONDITION OF RESOURCE BEFORE IT CREATED.
+IF CONDITION IS SATISFIED IT WILL CREATE RESOURE, OTHERWISE IT WONT.
+EX: TAGS, VERIFIED AMIS, SG --
+click on terraform logo --  > orginization -- > settings -- > Policy -- > name: Hard
+
+
+POLICY: NOE: TAKE POLICY FORM OFFICAL DOCS OR CHATGPT
+
+# Enforce that all resources must have tag "Env" set to "Prod"
+
+import "tfplan/v2" as tfplan
+
+# Function to check tags
+validate_tags = func(resource) {
+    # Some resources may not support tags
+    if not ("tags" in resource.applied) {
+        return true
+    }
+
+    # Check if "Env" tag exists and equals "Prod"
+    return resource.applied.tags["Env"] is "Prod"
+}
+
+# Collect all resources from the plan
+resources = filter tfplan.resource_changes as _, rc {
+    rc.mode is "managed" and rc.type is not null
+}
+
+# Run validation
+all_tags_valid = all resources as _, rc {
+    validate_tags(rc)
+}
+
+# Main Rule
+main = rule {
+    all_tags_valid
+}
+
+
+STEP-1: POLICY -- > NAME -- > HARD -- >  CODE -- > CREATE 
+STEP-2: POLICTY SET -- > CONNECT TO POLICY SET -- > NAME -- > SELECT POLICY -- > SAVE
+
+TERRAFORM LOGO -- > ORG -- > SETTINGS -- > POLICY 
+TERRAFORM CLOUD FEATURES:
+1. Workspaces
+2. Projects
+3. Runs
+4. Variables and Variable Sets
+5. Policies and Policy Sets
+6. Run Tasks
+7. Single Sign-On (SSO)
+8. Remote State
+9. Private Registry
+10. Agents
+11. Role-Based Access Control
+12. Version Control Integration
+13. Observability
+
+TERRAFORM CLOUD ENTERPISE FEATURES:
+Private Module Registry: Includes a private registry for sharing modules securely across teams.
+Policy as Code: Integrates Sentinel for enforcing policies during provisioning.
+Enhanced Automation: Offers advanced run triggers, notifications, and support for custom workflows.
+
+Multi-Organization Support: Allows multiple teams or departments to manage their own infrastructure within a single account.
+Advanced Collaboration: Provides role-based access controls and team management features, allowing for fine-grained permissions.
+Enhanced Security: Features like SSO (Single Sign-On), audit logs, and compliance tools.
+
+TO DELETE RESOURCES:
+SETTINGS -- > DESTRUCTION AND DELETION -- > DELETE QUEUE
+
+
+
+OPA is a more flexible, open-source policy engine that works across a much broader cloud-native stack – Terraform, Kubernetes, APIs, and more. Sentinel, on the other hand, is developed by HashiCorp and is tightly coupled with Terraform and the HashiCorp ecosystem.
+
+REMOTE ENHANCED BACKEND:
+CREATE THIS 	FILE ON LOCAL:
+
+provider "aws" {
+region = "us-east-1"
+}
+
+terraform {
+  backend "remote" {
+    hostname = "app.terraform.io"
+    organization = "my-terraform-batch-001"
+
+    workspaces {
+      name = "muthurepo"
+    }
+  }
+}
+
+resource "aws_instance" "three" {
+  count         = 1
+  ami           = "ami-00ca32bbc84273381"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "dev-server"
+  }
+}
+
+COMMANDS:
+
+terraform login
+add token
+terraform init
+terraform plan
+==============================================================================================
+DYNAMIC BLOCK:
+it is used to reduce the length of code and used for reusabilty of code in loop.
+
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {
+  ingress_rules = [{ port = 443 }, { port = 80 }, { port = 22 }]
+}
+
+
+resource "aws_security_group" "allow_tls" {
+  name        = "terra sg"
+  description = "Allow TLS inbound traffic"
+
+  dynamic "ingress" {
+    for_each = local.ingress_rules
+    content {
+      description = "*"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  tags = {
+    Name = "terra sg"
+  }
+}
+
+TERRAFORM FUNCTIONS
+
+you can call Functions from within expressions to transform and combine values.
+Functions will start with braches () and values will be seperated by commas ,
+terraform console is the command to work with functions
+Types of functions: String, Number, Filesystem, Collection and Encoding
+
+
+Secure Secrets in Terraform CodE
+
+TIP 1: Do Not Store Secrets in Plain Text
+TIP 2: Mark Variables as Sensitive
+TIP 3: Environment Variables
+TIP 4: Secret Stores (e.g., Vault, AWS Secrets manager)
+
+NOTE: Even after marked a value as sensitive in tf file, they are stored within the Terraform state file. 
+It is recommended to store security creds outside of terraform.
+
+========================================================================================================
+DYNAMIC BLOCK:
+it is used to reduce the length of code and used for reusabilty of code in loop.
+
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {
+  ingress_rules = [{ port = 443 }, { port = 80 }, { port = 22 }]
+}
+
+
+resource "aws_security_group" "allow_tls" {
+  name        = "terra sg"
+  description = "Allow TLS inbound traffic"
+
+  dynamic "ingress" {
+    for_each = local.ingress_rules
+    content {
+      description = "*"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  tags = {
+    Name = "terra sg"
+  }
+}
+
+TERRAFORM FUNCTIONS
+
+you can call Functions from within expressions to transform and combine values.
+Functions will start with braches () and values will be seperated by commas ,
+terraform console is the command to work with functions
+Types of functions: String, Number, Filesystem, Collection and Encoding
+
+
+Secure Secrets in Terraform CodE
+
+TIP 1: Do Not Store Secrets in Plain Text
+TIP 2: Mark Variables as Sensitive
+TIP 3: Environment Variables
+TIP 4: Secret Stores (e.g., Vault, AWS Secrets manager)
+
+NOTE: Even after marked a value as sensitive in tf file, they are stored within the Terraform state file. 
+It is recommended to store security creds outside of terraform.
+
+OPENTOFU: 
+its a Forked version of terraform.
+it comes into market on 2023.
+
+TERRAFORM is FREE & NOT-OPEN SOURCE & OPENTOFU is FREE & OPEN SOURCE.
+TERRAFORM IS MAINTAINED BY IBM BUT OPEN TOFU MAINTED BY COMMUNITY.
+TERRAFORM HAS LOT OF PROVIDERS & PLUGINS, BUT OPEN TOFU HAVING LIMTED.
+TERRAFORM HAS MORE FEATURES, OPENTOFU HAS LESS FEATURES. 
+TERRAFORM HAS HCP, BUT OPENTOFU DONT HAVE ANY CLOUD.
+
+
+wget https://github.com/opentofu/opentofu/releases/download/v1.9.0-rc2/tofu_1.9.0-rc2_linux_amd64.zip
+unzip tofu_1.9.0-rc2_linux_amd64.zip 
+mv tofu /usr/local/bin/tofu 
+tofu version
+
+AFTER INSTALLNG OPENTOFU RUN THE FOLLOWING COMMAND:
+
+vim /root/.bashrc
+export PATH=$PATH:/usr/local/bin/
+:wq
+source /root/.bashrc
+
+
+resource "aws_instance" "one" {
+  ami           = "ami-0208b77a23d891325"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "raham-server"
+  }
+}
+
+
+tofu init
+tofu plan
+tofu apply
+tofu destroy
+
+MIRATION FROM  TERRAFORM TO TOFU:
+1. TAKE BACKUPS (CODE, STATEFILE)
+2. TERRAFORM >1.5 VERSION 
+3. INSTALL OPENTOFU (VERSION)
+4. RUN TOFU COMMANDS
+
+
+TERRAFORMER:
+
+STEP-1: INSTALL TERRAFORM
+
+sudo yum install -y yum-utils shadow-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+sudo yum -y install terraform
+aws configure
+
+STEP-2: INSTALLING TERRAFORMER 
+
+wget https://github.com/GoogleCloudPlatform/terraformer/releases/download/0.8.24/terraformer-all-linux-amd64
+chmod +x terraformer-all-linux-amd64
+sudo mv terraformer-all-linux-amd64 /usr/local/bin/terraformer
+echo "export PATH=$PATH:/usr/local/bin/" >> .bashrc
+source .bashrc
+
+terraformer --version
+
+
+STEP-3: IMPORTING EXISTING INFRA TO TERRAFORM
+
+vi main.tf
+provider "aws" {
+region = "us-east-1"
+}
+
+terraform init
+
+COMMAND: terraformer import aws --resources=sg,ec2_instance,elb --regions=us-east-1
+UPDATE PROVIDERS IN STATE FILE:
+terraform state replace-provider -- -/aws hashicorp/aws
+terraform init
+terraform plan
+terraform apply
+
+
+TERRASCAN
+Terrascan is a open-source static code analysis tool.
+It is designed for scanning infrastructure as code (IaC) templates and configurations. 
+It helps identify security vulnerabilities and compliance violations
+it provides best practices, security standards, and compliance requirements. 
+It can also be used in pipelines with CI/CD systems
+
+
+ADVANTAGES
+Terrascan can be Integrated into CI/CD pipelines, IDEs and deployment workflows.
+Terrascan provides a library of predefined security and compliance rules.
+It can be set up to regularly scan and check for any drifts.
+Generates detailed reports that highlight issues found during the analysis.
+Supports mutiple cloud providers (AWS, Azure, GCP) cross-cloud infrastructure.
+Tools  K8S, ArgoCD, Atlantis, GitHub, and Docker, making it versatile for
+ADVANTAGES
+
+installation:
+curl -L "$(curl -s https://api.github.com/repos/tenable/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
+install terrascan /usr/local/bin && rm terrascan
+sudo install terrascan /usr/local/bin
+
+commands:
+terrascan init
+terrascan scan
+
+
+
+NORMAL CODE
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0" 
+  instance_type = "t3.micro"
+  }
+}
+
+
+
+ENHANCED CODE
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "example" {
+  ami                      = "ami-0c55b159cbfafe1f0" 
+  instance_type = "t3.micro"
+  monitoring       = true
+  metadata_options {
+    http_endpoint = "disabled"            
+  }
+
+  tags = {
+    Name = "IMDS-Disabled-Monitoring-Off"
+  }
+}
+
+==========================================================================================
+
+
+TERRAFORM VAULT
+HashiCorp Vault is a secrets management tool 
+It securely stores and controls access to tokens, passwords, certificates.
+It will encryption keys, and sensitive data.
+Terraform + Vault helps you provision cloud infrastructure without hardcoding or exposing secrets in your Terraform code.
+Terraform dynamically fetches secrets from Vault whenever needed.
+
+
+PROBLEMS IN REAL WORLD
+Storing AWS access keys directly in Terraform .tf files.
+Committing database passwords accidentally to GitHub.
+Using long-lived credentials that hackers can exploit if leaked.
+
+
+WORKING WITH VALUT:
+STEP-1: INSTALLING VAULT
+
+ Launch an EC2 instance with t2.medium and 8200 port enable
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+sudo apt-get update && sudo apt-get install vault -y
+
+STEP-1: AUTHENTICATION VAULT
+
+vault server -dev 
+export VAULT_ADDR='http://127.0.0.1:8200'
+export VAULT_TOKEN="******"  
+vault status
+
+STEP-3: ENABLING VAULT
+vault secrets enable -path=aws aws
+vault secrets list
+vault write aws/config/root access_key=<> secret_key=<> region=us-east-1
+vault write aws/roles/terraform-role \
+    credential_type=iam_user \
+    policy_document=-<<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+vault read aws/creds/terraform-role
+
+
+
+vault secrets enable -path=my kv
+vault kv put my/path user=raham
+vault kv get -format=json my/path
+vault secrets list
+vault kv delete my/path
+
+========================================================================================================
+
+PROVISOIONERS: to execute commands or scripts on servers.
+
+LOCAL EXEC:
+executes  command/script on local machine (where terraform is installed)
+it will execute the command when resource is created.
+
+CODE:
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "three" {
+  ami           = "ami-0866a3c8686eaeeba"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "abc-server"
+  }
+  provisioner "local-exec" {
+    command = "echo this is my local server"
+  }
+}
+
+
+REMOTE EXEC:
+
+executes  command/script on remote machine.
+once the server got created it will execute the commands and scripts for 
+installing the softwares and configuring them and deploying app also.
+
+
+CODE:
+
+provider "aws" {
+}
+
+resource "aws_instance" "one" {
+  ami                    = "ami-000ec6c25978d5999"
+  instance_type          = "t2.micro"
+  key_name               = "Rkeypair"
+  vpc_security_group_ids = ["sg-0329cd46bd67094a1"]
+  tags = {
+    Name = " rahaminstance"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum install httpd git -y",
+      "sudo systemctl start httpd",
+      "sudo cd /var/www/html",
+      "sudo git clone https://github.com/karishma1521success/swiggy-clone.git",
+      "sudo mv swiggy-clone/* .",
+      "sudo mv /home/ec2-user/* /var/www/html"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("~/.ssh/id_rsa")
+      host        = self.public_ip
+    }
+  }
+}
+
+
+FILE PROVISONER: COMMANDS WE CAN EXECUTE THROUGH FILE
+NOTE: CREATE A SCRIPT ON YOUR LOCAL FOLDER
+
+
+provider "aws" {
+}
+
+resource "aws_instance" "one" {
+  ami                    = "ami-01816d07b1128cd2d"
+  instance_type          = "t2.micro"
+  key_name               = "swikp"
+  vpc_security_group_ids = ["sg-0c656c667bc0861e0"]
+  user_data              = "${file("apache.sh")}"
+
+  tags = {
+    Name = " rahaminstance"
+  }
+}
+
+apache.sh
+
+
+#! /bin/bash
+sudo -i
+sudo yum install httpd git -y
+sudo systemctl start httpd
+sudo systemctl status httpd
+sudo git clone https://github.com/Ironhack-Archive/online-clone-amazon.git
+sudo mv online-clone-amazon/* /var/www/html
+
+
+
+FILE UPLOAD:
+
+provider "tls" {
+}
+provider "local" {
+}
+resource "tls_private_key" "name" {
+  rsa_bits  = 2048
+  algorithm = "RSA"
+}
+resource "local_file" "name" {
+  content  = tls_private_key.name.private_key_pem
+  filename = "demo.pem"
+}
+
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "demo-bucket-1234567890-for-tfkeypair"
+}
+resource "aws_s3_bucket_object" "file_upload" {
+  bucket = aws_s3_bucket.my_bucket.id
+  key    = "demo.pem"
+  source = "demo.pem"
+}
+
+
