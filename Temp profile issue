@@ -1,0 +1,19 @@
+To know your SID:
+wmic useraccount where name="USER" get sid 
+whoami /user
+ 
+Temporary profile issue:
+ 
+Open Regedit.msc
+Go to "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
+Check for folders entries with .bak
+ 
+If the SID key is with .bak:
+ 
+Right click on the SID key (eg: S-1-5-21-....-1001.bak), click on Rename, and rename the SID key to only remove ".bak" (eg: S-1-5-21-....-1001) at the end of the key's name.
+ 
+In the right panel of the SID key (eg: S-1-5-21-....-1001) now without .bak at the end, double click on the ProfileImagePath value name to modify it.
+ 
+Enter the correct path (eg: C:\Users\<user-name>) of the user's profile folder, and click OK.
+ 
+Verify that the State DWORD is set with a value data of 0 (number zero).
