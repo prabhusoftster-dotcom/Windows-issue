@@ -1,0 +1,815 @@
+
+
+RESOURCE GROUP: GROUP OF COMPONENTS ATTACHED TO RESOURCE 
+VM: FIREWALL, VOL, KEYPAIR, VPN -----
+
+
+HOW TO CREATE BILLING ALARM:
+
+
+
+SERVICE-1: CREATE VM (AWS=EC2)
+
+IN AZURE SERVER CAN BE CALLED AS VM
+VM: VIRTUAL MACHINE
+TYPE VM ON AZURE PORTAL 
+
+STEP-1: CLICK ON VM
+STEP-2: CREATE -- > AZURE VIRUAL MACHINE
+STEP-3: GIVE CONFIG AS PER YOUR REQUIRMENT -- > CREATE
+STEP-4: GO TO RESOURCE
+STEP-5: CONNECT -- >  Native SSH
+CONFIGURE AND CONNECT
+
+SCRIPT:
+#! /bin/bash
+sudo -i
+apt update
+apt install nginx  -y
+git clone https://github.com/karishma1521success/swiggy-clone.git
+mv swiggy-clone/* /var/www/html/
+
+SERVICE-2: CREATE IMAGE (AWS=AMI)
+
+IMAGE CREATION FOR VM:
+CAPTURE -- > IMAGE -- > RG: SWIGGY -- > Target Azure compute gallery : NEW -- > Version number: 0.0.1 -- > SELECT CANADA AND US-EAST -- >  REVIEW + CREATE 
+
+IT WILL TAKE MINIMUN 10 MINS 
+
+CREATE VM -- > GIVE CONFIG -- > NEW SERVER WITH SAME APP
+
+
+SERVICE-3: CREATE VERTICAL SCALING (AWS=ASG)
+
+STEP-1: CREATE A VM AND LAUCH SWIGYY APP
+STEP-2: SELECT SEVER -- > STOP  -- > AVALAIBLITY + SCALE
+STEP-3: SIZE -- > B2MS -- > RESIZE -- > START THE SERVER 
+
+SERVICE-4: CREATE VMSS (AWS=ASG)
+
+CREATING VMSS:
+STEP-1: VM -- > Virtual Machine Scale Set (VMSS) -- > CREATE
+STEP-2: NAME -- > ZONES (1,2,) -- > SCALING AUTO SCALE & GIVE CONFIG -- >
+STEP-3:  LOAD BALANCER -- > NEXT -- > NEXT -- > CREATE 
+
+
+
+Connect to server sudo -i
+apt update
+apt install stress -y
+
+NOTE: GO TO VMSS -- > MONITORING -- > SEE THE DASHBOARDS
+
+
+Locally-redundant storage (data is replicated within a single datacenter)
+Zone-redundant storage (data is replicated to three zones)
+
+
+SERVICE-5: DISK
+STEP-1: CREATE SERVER
+STEP-2: SEVRVER -- > DISK -- > OS DIKS -- > CREATE SNAPSHOT -- > COPY TO OTHER REGION -- > NAME -- > SELECT REGION -- > CREATE 
+
+CREATE DISK -- > ADD THE DISK TO NEW NEW SERVER
+
+STEP-3: SETTINGS -- > SIZE + PERFOMANCE -- > INCREASE SIZE (STOP VM)
+STEP-4: SETTINGS -- > DISK -- > ADD NEW DISK
+
+
+SERVICE-6: AZURE STORAGE (AWS = S3)
+BLOB: Binary Large Object 
+
+STEP-1: CREATE STORAGE ACCOUNT.
+NEW RESOURCE -- > STORAGE ACCOUNT -- > CREATE -- > 
+
+STEP-2: FILE UPLOAD:
+Container -- > upload file -- > Open -- > URL -- > Denied
+
+STEP-3: GIVING PERMISSIONS:
+Click on ... -- > Generate SAS -- > Blob SAS URL
+       SAS: SHARED ACCESS SIGNATURE
+
+STEP-4: TIER CHANGING:
+Click on ... -- > Change TIER -- > cool -- > Save
+
+STEP-5: LIFECYCLE MANAGEMENT:
+Storage account -- > Data Management-- > LifeCycle -- > Add Rule -- > Name -- > Days -- > Move to Cool -- > Save
+
+STEP-6: OBJECT REPLICATION (AWS = CRR)
+CREATE NEW STORAGE ACCOUNT AND CREATE NEW CONTAINER INSIDE IT
+GO TO STORAGE ACCOUNT-1 -- > DATA MANAGEMENT -- > OBJECT REPLICATION -- > CREATE RULE
+Destination storage account : name --- > Source container --> Destination container
+create
+
+
+STEP-7: VERSIONING 
+
+Storage account -- > Data Management-- > Versioning 
+
+
+STEP-8: STATIC WEBHOST
+
+GO TO DATA MANAGEMENT -- > STATIC WEBHOISTING --> ENABLE
+GIVE INDEX.HTML AS MAIN FILE
+
+IT WILL CREATE $WEB CONTAINER
+UPLOAD YOUR CODE IN THAT CONTAINER
+
+GO TO DATA MANAGEMENT -- > STATIC WEBHOISTING --> URL -- > 
+
+=======================================================================================
+
+SERVICE-7: DASHBOARDS (AWS=CLOUD WATCH)
+STEP-1: CREATE A VM
+STEP-2: MONITORING -- > ALEART RULES -- > RULES (GIVE EMAIL AT DETAILS SECTIONS)
+STEP-3: CONNECT TO SERVER -- > STRESS
+STEP-4: CHECK THE EMAILS	
+
+CHEKING THE LOGS:
+LOGS -- > ENABLE
+CONNECT TO DATA SOURCE -- > VM -- >  	
+
+SERVICE-8: ARM (AWS=CFT)
+STEP-1: ARM -- > BUILD OWN OR USE READY TEMPLATE
+STEP-2: UPLOAD BOTH PARAMETERS AND TEMPLATES
+STEP-3: CREATE
+
+
+SERVICE-9: ELB 
+
+STEP-1: CREATE 2 SERVERS BY SELECTING 2 ZONES
+STEP-2: NETWORKING -- > APP LB -- > RULES -- > CREATE 
+
+
+
+SERCICE-10: AZURE CLI
+
+STEP-1: CREATE A VM OR USE COMMAND PROMPT/POWERSHELL
+STEP-2: DOWNLOAD AZURE CLI LINUX: (curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash)
+        WINDOWS: winget install --exact --id Microsoft.AzureCLI
+
+STEP-3: az login --use-device-code
+
+COMMANDS:
+az vm list
+az vmss list
+az disk list
+az disk list --resource-group raham
+az disk list -g raham
+az group list
+az resource list --resource-group raham
+
+
+az group create --location westus2 --resource-group clirg
+
+az vm create  -g clirg --name raham   --image Debian11   --size Standard_F2als_v6   --location westus   --admin-username azureuser   --generate-ssh-keys
+
+
+az graph query -q "Resources | project name, location, type | where type =~ 'Microsoft.Compute/virtualMachines' | order by name desc"
+
+
+az login
+
+az vm create --resource-group clirg --name raham --location eastus --image Ubuntu2204 --size Standard_Ds2_v3 --admin-username azureuser --generate-ssh-keys
+   
+az vm stop --resource-group clirg   --name raham
+az vm start --resource-group clirg  --name raham
+az vm delete --resource-group clirg   --name raham
+
+
+
+az group create --name storage-resource-group --location eastus
+az storage account create --name raham --resource-group demo --location westus --sku Standard_RAGRS --kind StorageV2 --min-tls-version TLS1_2 --allow-blob-public-access false
+
+az storage container create --name cont1 --account-name rahamtwo --resource-group demo
+
+
+az storage account delete --name rahamsa333 --resource-group storage-resource-group
+az group delete --name storage-resource-group 
+
+
+az vmss create -n MyVmss -g raham --instance-count 5 --image Debian11 --size Standard_B2s --location eastus2
+
+
+azcopy copy 'KCSA-1.txt' 'https://storage_account_name.blob.core.windows.net/cont1/'
+
+
+1. https://aka.ms/downloadazcopy-v10-windows
+2. extract all 
+3. ADD TO EN VARIABLES IN SYSTEM
+4. azcopy --version  
+
+
+============================================================================================
+AKS:
+OPEN CLOUD SHELL:
+az login --use-device-code
+
+CREATE AKS IN GUI -- > 
+AKS -- > CREATE -- > SUBSCRIPTION (CLICK) -- > RG: -- > NAME: -- > REGION: Region
+East US-- > NODE POOLS 
+agent node : adjust cpu ram and nodes 
+create
+ 
+AFTER CREATING CLUSTER:
+GUI -- > CLUSTER -- > WORKLOADS -- > CREATE DEPLOYMENT
+GO TO DEPLOYMENT -- > ENABLE PROMETEHUS & GRAFANA -- > SAVE
+
+
+
+AFTER CREATE CLUSTER -- > CONNECT 
+az login
+az account set --subscription 050ed20d-227a-4114-959b-ff68700c5d66
+az aks get-credentials --resource-group Prod-Env --name Prod-Cluster --overwrite-existing
+
+WORKING FROM GUI:
+CLUSTER
+K8S RESOURCES
+
+
+
+APP SERVICES:
+CREATE -- > WEB APP  -- > Give details
+Create bd -- > select cache 
+create N/W AND SUBNET (otherwise error will come)
+
+
+
+GO TO DEPLOMENT -- > CREATE DE[PLOYMENT 
+
+https://github.com/RAHAMSHAIK007/python.git	
+
+DATABASE
+CREATE -- > Wordpress + MySQL Flexible server -- > CREATE
+RG -- > REGION -- > NAME -- > PASSWORD -- > review + create
+
+USERS:
+
+
+====================================================================
+
+
+Step 1: Virtual network -- > name -- > Review + Create
+Step 2: Virtual network Gateway-- > name -- > Review + Create
+Step-3: Local nlw Gateways -- > Review + Create
+
+
+
+# Create a resource group for the VPN setup
+az group create --name SWIGGY_group --location eastus
+
+# Create a virtual network with a subnet for the front end
+az network vnet create --name VNet1 --resource-group SWIGGY_group --location eastus --address-prefix 10.1.0.0/16 --subnet-name FrontEnd --subnet-prefix 10.1.0.0/24
+
+# Create a public IP address for the VPN gateway
+az network public-ip create --resource-group SWIGGY_group --name MyIp
+
+# Create a VPN gateway for the virtual network
+az network vnet-gateway create --name VNet1GW --public-ip-address MyIp --region eastus --resource-group SWIGGY_group --vnet VNet1 --gateway-type Vpn --vpn-type RouteBased --sku VpnGw2AZ --vpn-gateway-generation Generation2 --no-wait
+
+# Show the details of the created VPN gateway
+az network vnet-gateway show --name VNet1GW --resource-group SWIGGY_group
+
+# Show the public IP details of the VPN gateway
+az network public-ip show --resource-group SWIGGY_group --name MyIp
+
+# (Optional) Delete the resource group after setup
+# Note: This is a destructive command. If you want to execute it directly, please add the "--yes" parameter to this command.
+# az group delete --name SWIGGY_group
+
+
+================================================================================================================================
+
+SLA	: SERVICE LEVEL AGGREMENT ( 1 YERA = 1 HR )
+SLI	: SERVICE LEVEL INDICATIOR (LATENCY)
+SLO	: SERVICE LEVEL OBJECTIVE  (99.95)
+
+
+AZURE DATABASES:
+
+STEP-1:
+Azure Database for PostgreSQL flexible server
+RESOURCE GROUP:
+NAME:
+SIZE:
+VERSION:
+PASSWORD:
+NETWORK: ENABLE PUBLIC ACCESS -- > MANDATORY
+
+STEP-2: CREATE A VM INSTALL PSQL
+CREATE A SERVER AND RUN THE BELOW COMMANDS:
+
+apt update && apt install mysql-client-core-8.0  -y
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az login --use-device-code
+
+STEP-3: CONNECT TO DB
+database -- > settings -- > connect -- > Connect from browser or locally
+COPY PASTE COMMAND ON VM AND GIVE PASSWORD
+
+
+CREATE DATABASE abc;
+use abc;
+
+CREATE TABLE users (
+    sno SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    city VARCHAR(100),
+    password VARCHAR(100)
+);
+
+
+INSERT INTO users (name, city, password)
+VALUES
+('Ravi Kumar', 'Hyderabad', 'Ravi@123'),
+('Ayesha Khan', 'Bangalore', 'Ayesha@456'),
+('John Paul', 'Delhi', 'John@789'),
+('Meena Sharma', 'Mumbai', 'Meena@321');
+
+
+SELECT * FROM users;
+=========================================================================================================================
+
+ACR: AZURE CONTAINER REGISTRY
+NOTE: SAME AS AWS
+
+
+USERS AND GROUPS:
+
+USERS -- > CREATE USER
+
+
+
+
+MICROSOFT CLOUD DEFENDER:
+
+FRONT DOOR:
+
+WAF:
+
+STEP-1: AZURE ENTRA ID -- > ADD -- > USER -- > DETAILS -- > CREATE
+STEP-2: ROLES -- > 
+STEP-3: AZURE DEVOPS LOGO -- > CRETE NEW ORG -- > PVT -- > CREATE
+STEP-4: OVERVIEW -- > MANAGE SVC -- > Service Connection. -- >  Azure Resource Manager
+
+===============================================================================================================================
+AZURE DEVOPS TERRAFORM PROJECT:
+
+STEP-1: CREATE A RESOURCE GROUP
+STEP-2: CREATE A STORAGE ACCOUNT (For backend)
+STEP-3: CREATE A CONTAINER
+STEP-4: SERVICE PRINCIPAL (TO GIVE PERMISSION)
+
+
+
+
+Application (client) ID
+eb2686ef-c022-41f2-bd2b-7e71239ad752
+Object ID
+166bd3e7-cc26-4756-8e51-d3a59dc982b6
+Directory (tenant) ID
+49440cc3-344c-49bc-9c67-d0c84c2d1a1a
+
+
+
+
+
+STEP-1: CREATE AZURE DEVOPS ACCOUNT
+STEP-2: REPOS -- > IMPORT THE PROJECT
+STEP-2: PIPELINES -- > ENV -- > NONE 
+STEP-3: AZURE DEVOPS LOGO -- > CRETE NEW ORG -- > PVT -- > CREATE
+STEP-4: OVERVIEW -- > MANAGE SVC -- > Service Connection. -- >  Azure Resource Manager
+
+
+
+HOW TO USE TERRAFORM IN AZURE:
+
+STEP-1: DOWNLOAD AZURE CLI 
+OPEN COMMAND PROMPT ON YOUR LAPTOP AND RUN BELOW COMMAND
+
+winget install --exact --id Microsoft.AzureCLI
+
+STEP-2: OPEN VS CODE AND DOWNLOAD AZURE TOOLS EXENSION
+
+STEP-3: WRITE THE CODE
+
+https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine
+
+
+STEP-4: USE ENV VAR FOR SUBSCRIPTION
+$env:TF_VAR_subscription_id = "41997cb----------------"
+
+
+
+CODE FOR AZURE SA, CONTAINER, BLOB, FILES 
+
+provider "azurerm" {
+  features {}
+  subscription_id = var.subscription_id
+}
+
+variable "subscription_id" {
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "raham-resources"
+  location = "EAST US"
+}
+
+
+resource "azurerm_storage_account" "example" {
+  name                     = "rahamsirtorageacct"
+  resource_group_name      = azurerm_resource_group.example.name
+  location                 = azurerm_resource_group.example.location
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+
+  tags = {
+    environment = "staging"
+  }
+}
+
+
+resource "azurerm_storage_container" "example" {
+  name                  = "container1"
+  storage_account_id    = azurerm_storage_account.example.id
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_blob" "upload_files" {
+    for_each = 
+
+  name                   = "index.html"
+  storage_account_name   = azurerm_storage_account.example.name
+  storage_container_name = azurerm_storage_container.example.name
+  type                   = "Block"
+  source                 = "index.html"
+}
+
+
+
+
+=====================================
+provider "azurerm" {
+  subscription_id = var.subscription_id
+  features {
+  }
+}
+
+
+variable "subscription_id" {
+}
+
+variable "prefix" {
+  default = "raham"
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "${var.prefix}-resources"
+  location = "West Europe"
+}
+
+resource "azurerm_virtual_network" "main" {
+  name                = "${var.prefix}-network"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+resource "azurerm_subnet" "internal" {
+  name                 = "internal"
+  resource_group_name  = azurerm_resource_group.example.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_network_interface" "main" {
+  name                = "${var.prefix}-nic"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  ip_configuration {
+    name                          = "testconfiguration1"
+    subnet_id                     = azurerm_subnet.internal.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_virtual_machine" "main" {
+  name                  = "${var.prefix}-vm"
+  location              = azurerm_resource_group.example.location
+  resource_group_name   = azurerm_resource_group.example.name
+  network_interface_ids = [azurerm_network_interface.main.id]
+  vm_size               = "Standard_DS2_v3"
+
+  # Uncomment this line to delete the OS disk automatically when deleting the VM
+  # delete_os_disk_on_termination = true
+
+  # Uncomment this line to delete the data disks automatically when deleting the VM
+  # delete_data_disks_on_termination = true
+
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "myosdisk1"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "hostname"
+    admin_username = "testadmin"
+    admin_password = "Password1234!"
+  }
+  os_profile_linux_config {
+    disable_password_authentication = false
+  }
+  tags = {
+    environment = "staging"
+  }
+}
+
+
+
+
+DATABASE:
+
+
+
+provider "azurerm" {
+  subscription_id = "cefd54cf-e1ce-4691-9191-8d6a6a6f236c"
+  features {}
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "example-resources"
+  location = "canada central"
+}
+
+resource "azurerm_virtual_network" "example" {
+  name                = "example-vn"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "example" {
+  name                 = "example-sn"
+  resource_group_name  = azurerm_resource_group.example.name
+  virtual_network_name = azurerm_virtual_network.example.name
+  address_prefixes     = ["10.0.2.0/24"]
+  service_endpoints    = ["Microsoft.Storage"]
+  delegation {
+    name = "fs"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+resource "azurerm_private_dns_zone" "example" {
+  name                = "example.postgres.database.azure.com"
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "example" {
+  name                  = "exampleVnetZone.com"
+  private_dns_zone_name = azurerm_private_dns_zone.example.name
+  virtual_network_id    = azurerm_virtual_network.example.id
+  resource_group_name   = azurerm_resource_group.example.name
+  depends_on            = [azurerm_subnet.example]
+}
+
+resource "azurerm_postgresql_flexible_server" "example" {
+  name                          = "example-swiggydbserver0088"
+  resource_group_name           = azurerm_resource_group.example.name
+  location                      = azurerm_resource_group.example.location
+  version                       = "12"
+  delegated_subnet_id           = azurerm_subnet.example.id
+  private_dns_zone_id           = azurerm_private_dns_zone.example.id
+  public_network_access_enabled = false
+  administrator_login           = "psqladmin"
+  administrator_password        = "H@Sh1CoR3!"
+
+  storage_mb   = 32768
+  storage_tier = "P4"
+
+  sku_name   = "B_Standard_B1ms"
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.example]
+
+}
+
+
+
+
+provider "azurerm" {
+  features {}
+  subscription_id = var.subscription_id
+}
+
+variable "subscription_id" {
+}
+
+resource "azurerm_resource_group" "example" {
+  name     = "vpn-resources"
+  location = "West Europe"
+}
+
+resource "azurerm_network_security_group" "example" {
+  name                = "example-security-group"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+resource "azurerm_virtual_network" "example" {
+  name                = "example-network"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  address_space       = ["10.0.0.0/16"]
+  dns_servers         = ["10.0.0.4", "10.0.0.5"]
+
+  subnet {
+    name             = "subnet1"
+    address_prefixes = ["10.0.1.0/24"]
+  }
+
+  subnet {
+    name             = "subnet2"
+    address_prefixes = ["10.0.2.0/24"]
+    security_group   = azurerm_network_security_group.example.id
+  }
+
+  tags = {
+    environment = "Production"
+  }
+}
+
+
+resource "azurerm_ip_group" "example" {
+  name                = "example1-ipgroup"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  cidrs = ["10.0.0.0/16", "10.0.1.0/24", "10.0.2.0/24"]
+
+  tags = {
+    environment = "Production"
+  }
+}
+
+
+
+
+resource "azurerm_virtual_wan" "example" {
+  name                = "example-vwan"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+}
+
+resource "azurerm_virtual_hub" "example" {
+  name                = "example-hub"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  virtual_wan_id      = azurerm_virtual_wan.example.id
+  address_prefix      = "10.0.1.0/24"
+}
+
+resource "azurerm_vpn_gateway" "example" {
+  name                = "example-vpng"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  virtual_hub_id      = azurerm_virtual_hub.example.id
+}
+
+===================================================================================================
+
+AZURE 3 TIER PROJECT:
+
+STEP-1: GO TO GITLAB AND CREATE A PROJECT
+
+
+
+
+
+terraform init -backend-config="storage_account_name=tfproject" -backend-config="container_name=tfcontainer" -backend-config="key=terraform.tfstate"
+
+
+AZURE DEVOPS
+CREATE ACCOUNT
+NAME 
+
+
+STEP-1: CREATE A AZURE REPO AND PUSHT HE CODE
+STEP-2: CREATE A PIPELINE
+PIPELINE -- > SELECT REPO -- > WRITE CODE
+
+
+STEP-3: ORGANIZAION SETTINGS -- > SETTINGS -- > DISABLE CLASSIC OPTIONS (LAST 2)
+
+STEP-4: SETUP AN AGENT
+
+STEP-5: PIPELINES -- > NEW PIPELINE -- > CLASSIC EDITOR -- > AZURE REPO -- > empty job -- > download terraform -- > 
+
+===========================================================
+
+ENTRA ID : USED TO AUTHENTICATION AND AUTHORIZATION
+
+
+
+
+STEP-1: CREATE A USER
+ENTRA ID -- > USER -- > CREATE USER -- >  
+
+
+=========================================================================================
+
+
+STEP-1: CREATE AZURE DEVOPS ACCOUNT
+STEP-2: IMPORT THE REPO
+STEP-3: CREATE PIPLEINE & WRITE THE CODE
+STEP-4: CREATE SERVICE CONNECTION
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  dockerRegistryServiceConnection: 'dockerhub-service-connection'
+  imageRepository: 'rahamshaik007/jenkins-java-project'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+
+# ===================================================
+# BUILD STAGE
+# ===================================================
+- stage: Build
+  displayName: Build Java App
+
+  jobs:
+  - job: MavenBuild
+
+    steps:
+
+    - checkout: self
+
+    - task: Maven@4
+      displayName: Maven Build
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'clean package'
+        publishJUnitResults: true
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+
+# ===================================================
+# DOCKER STAGE
+# ===================================================
+- stage: Docker
+  displayName: Docker Build Push
+
+  dependsOn: Build
+
+  jobs:
+  - job: DockerPush
+
+    steps:
+
+    - checkout: self
+
+    # LOGIN
+    - task: Docker@2
+      displayName: Docker Login
+      inputs:
+        command: login
+        containerRegistry: 'dockerhub-service-connection'
+
+    # BUILD IMAGE
+    - task: Docker@2
+      displayName: Build Docker Image
+      inputs:
+        command: build
+        repository: '$(imageRepository)'
+        dockerfile: '$(dockerfilePath)'
+        tags: |
+          latest
+          $(tag)
+
+    # PUSH IMAGE
+    - task: Docker@2
+      displayName: Push Docker Image
+      inputs:
+        command: push
+        repository: '$(imageRepository)'
+        containerRegistry: 'dockerhub-service-connection'
+        tags: |
+          latest
+          $(tag)
+
