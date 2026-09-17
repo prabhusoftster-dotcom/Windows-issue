@@ -1,0 +1,34 @@
+Pre-requisites
+1. Collect all the existing configuration details of Server (IP, Drives, Data lun Ip, LIF IP deals etc)
+2. Please ensure the server is in backup
+3. Please ensure we have Enough space available system drive. At least 20-35 GB
+4. Please ensure ISO Image is copied to the server for In-place upgrade.
+5. Validate the application compatibility with windows 2022 Server.
+6. Please ensure Server is fully patched.
+7. RAM should be at least of 8 GB and not been over utilised.
+8. Please ensure you communicate to Pieter Boeckx In advance for Azure Servers.
+9. Two additional Local Accounts should be created and having password: Alight@123
+10.Verify the previously installed OS version
+ 
+For DC, DNS etc
+ 
+Please ensure we have collected all the details like FSMO Roles, DNS details and so on
+ 
+ 
+Implementation Plan:
+In Place Upgrade (Non -DC)
+1. Power off the Server and take clone of server only with System Drive. - Assignee VMware hardware or Wintel Team
+2. Power on the Server - Wintel Team
+3. Take Snapshot of the server - Wintel Team/VMware team
+4. Initiate In-place upgrade.
+ 
+Roll Back Plan:
+In Place upgrade
+1. Restore the Server from snapshot -If it would not work
+2. Power off the Current Sever
+2. Connect the system drives on Cloned Server and power it on.
+ 
+Fresh installation:
+ 
+Power off the new Server
+Power on the old Server
