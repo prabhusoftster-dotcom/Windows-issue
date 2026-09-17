@@ -1,0 +1,562 @@
+
+GCP NOTES.txt
+100%
+1. COMPUTE ENGINE
+
+CREATE INSTANCE 
+GIVE OPTIONS AS PER YOU CHOICE 
+SELECT THEM ON LEFT PANNEL 
+CREATE
+
+SCTIPT:
+
+#! /bin/bash
+sudo -i
+apt update
+apt install nginx git -y
+cd /var/www/html/
+git clone https://github.com/Ironhack-Archive/online-clone-amazon.git
+mv online-clone-amazon/* .
+
+
+2. IMAGE CREATION
+
+IMAGE -- > CREATE -- > SOURCE DISK -- > CREATE 
+select image -- > create instance -- > 
+
+3. BUCKETS
+CREATE BUCKET AND UPLOAD FILES
+SELECT OBJECT -- > CLICK ON DOTS -- > COPY AUTHENTICATED URL
+
+COFIGURATION -- > Cross-bucket replication -- > SELECT BUCKET AND UPLOAD DATA -- > CHECK OP
+LIFECYCLE -- > RULE -- > 
+
+STATIC WEBHOSTING:
+1. CREATE A BUCKET WITH PUBLIC ACCESS ENABLE
+2. UPLOAD DATA 
+3. PERMISSIONS -- > GRANT ACCESS -- > Add principals: ALL USERS -- > Assign roles: STORAGE VIEWER -- > CREATE 
+
+4. INSTANCE TEMPLATE
+
+CREATE -- > OS -- > HTTP, HTTPS -- > ADVANCE -- > STARTUP SCRIPT -- > CREATE 
+
+5. ASG: Instance Group
+SELECT THE Instance templates
+Create Instance Group
+Template: your-template
+Location: multi-zone (1a,1b,1c) [TYPE=EVEN] 
+Auto-scaling: ON (scale in and scale out)
+Give properties default
+create
+
+6. INCIDENT MANAGEMNT: ALEARTS
+
+SELECT VM -- > OBSERVABILITY -- > MONITOR VM
+ALEARTING
+CREATE POLICY
+VM INSTANCE -- > INSTANCE -- > CPU UTILIZATION -- > APPLY
+Policy configuration mode: BUILDER
+FILTER: instance id = id_value
+NEXT
+
+Threshold : 20
+Configure notifications and finalize alert
+Manage Notification channels 
+Email : devopsbyraham@gmail.com	 -- > display: CPU
+
+Notify on incident closure : 30 MIN
+Policy Severity Level: CRITICAL
+Text: ----------------
+Name the alert policy: CPU
+ 
+===========================================================================================
+
+7: GCLOUD:
+
+Its a cli tool used to interact with resources
+cloudshell -- > 
+gcloud --version
+gcloud init
+create a new configuration
+Select an account:
+Do you want to configure a default Compute Region and Zone? (Y/n)?  n
+gcloud config list
+
+
+
+COMMANDS:
+
+gcloud config list project
+gcloud config configurations list
+gcloud config configurations activate my-default-configuration
+gcloud config list
+
+gcloud compute instances create raham --zone=us-central1-a --machine-type=e2-micro --image-family=debian-11 --image-project=debian-cloud
+
+gcloud compute instances describe raham --zone=us-central1-a
+gcloud compute instances stop raham --zone=us-central1-a
+gcloud compute instances start raham --zone=us-central1-a
+gcloud compute instances restart raham --zone=us-central1-a
+gcloud compute instances delete raham --zone=us-central1-a
+gcloud compute ssh raham --zone=us-central1-a
+gcloud compute disks snapshot my-disk --zone=us-central1-a --snapshot-names=my-snapshot
+
+BUCKETS:
+
+gcloud storage buckets create gs://[BUCKET_NAME]
+gcloud storage buckets create gs://[BUCKET_NAME] --location=[LOCATION] --storage-class=[STORAGE_CLASS] --uniform-bucket-level-access
+
+gcloud storage buckets list
+gcloud storage ls gs://[BUCKET_NAME]
+gcloud storage buckets describe gs://[BUCKET_NAME]
+gcloud storage buckets update gs://[BUCKET_NAME] --[SETTING]=[VALUE]
+
+gcloud storage cp gs://[SOURCE_BUCKET]/[SOURCE_OBJECT] gs://[DESTINATION_BUCKET]/[DESTINATION_OBJECT]
+
+gcloud storage cp gs://[BUCKET_NAME]/[OBJECT_NAME] [LOCAL_FILE_PATH]
+
+gcloud storage rm -r gs://[BUCKET_NAME]
+
+gcloud storage mv gs://[BUCKET_NAME]/[OLD_OBJECT_NAME] gs://[BUCKET_NAME]/[NEW_OBJECT_NAME]
+
+gcloud storage rsync gs://source-bucket gs://dest-bucket.
+
+
+
+8. SNAPSHOT MANAGEMENT:
+SNAPSHOTS 
+CREATE SCHEDULE
+NAME:
+REGION: 
+Snapshot storage location: MULTI-REGION (SELECT USA)
+TIME:
+Deletion rule: Delete snapshots older than 14 days
+
+
+ADDING SECOND DISK:
+DISK
+CREATE DISK
+GO TO SERVER AND EDIT 
+ATTACH EXISTING DISK
+
+
+9. USER MANAGEMENT
+
+USERS -- > PROVIDERS -- > EMAIL & PASSWORD -- > ENABLE -- > SAVE
+IAM -- > GRANT ACCESS -- > PRINCIAP: EMAIL -- > ROLE: COMPUTE ADMIN -- > save
+LOGIN TO URL:  https://console.cloud.google.com/ 
+ENTER EMAIL AND PASSWORD
+WORK WITH COMPUT ENGINE
+
+
+===========================================================================
+
+10. GKE: https://cloud.google.com/kubernetes-engine/pricing
+
+STEP-1: GKE -- > CREATE CLUSTER
+STEP-2: NAME & REGION
+STEP-3: FLEET REGISTRATION
+STEP-4: Network and Node subnet : Default (POD : /17, SERVICE: /22)
+STEP-5: CREATE
+
+WAIT FOR 10 MINS TO CREATE CLUSTER
+
+STEP-6: CLICK ON DEPLOY & GIVE CONTAINER INFO 
+STEP-7: NOTE: REMOVE LIMITS AND REQUEST SECTION IF PODS ARE NOT RUNNING (LINE:127)
+STEP-8: ACCESS THE APPLICATION THROUGH THE SERVICE 
+STEP-9: UPDATE THE NEW IMAGE (rahamshaik/mynetflix:1.0)
+STEP-10: EXPLORE THE FOLLOWING OPTIONS
+
+
+Overview
+Details
+Observability
+Revision history
+Events
+Logs
+App errors 
+YAML
+
+
+Connecting to Kubectl -- > enables cli to work with Kubernetes
+
+ACTIONS -- > AUTOSCALE -- > HPA & VPA 
+
+
+11. CLOUD FUNCTIONS: LIKE SERVERLESS LAMBDA 
+RUNS ANY CODE 
+
+GOOGLE CLOUD DFUNCTION -- > WRITE FUNCTION -- > NAME -- > NODE JS -- > min: 1 & max: 2 -- > Public url -- >  CREATE -- > ENABLE CLOUD BUILD API -- > CREATE 
+
+
+SAVE AND DEPLOY
+TEST -- > GIVE NAME -- > SEE ON CLOUD SHELL
+
+YOU CAN SEE OUTPUT THROUGH URL AS WELL 
+
+CHECK METRICS TO SEE THE UTILIZATION AND DATA
+
+
+
+==========================================================================================
+
+5. LOAD BALANCER
+STEP-1: CREATE 2 SERVERS IN SAME ZONE
+
+STEP-2: CREATE INSTANCE GROUP
+INSTACE GROUP
+CREATE INSTACE GROUP
+New unmanaged instance group
+FILL THE DETAILS
+
+STEP-3: SELECT LOAD BALANCER -- > 
+TYPE	: APPLICATION
+FACING	: PUBLIC
+REGIONAL: Best for regional workloads
+CONFIGURE
+
+STEP-3: 
+NAME	: AMAZON
+N/W	: DEFAULT
+SUBNET	: RESERVER
+FRONTEND 
+BACKEND CONFIG
+CREATE
+
+
+
+
+6. CLOUD FUNCTIONS: LIKE SERVERLESS LAMBDA 
+RUNS ANY CODE 
+
+GOOGLE CLOUD DFUNCTION -- > WRITE FUNCTION -- > NAME -- > NODE JS -- > CREATE -- > ENABLE CLOUD BUILD API -- > CREATE 
+
+
+SAVE AND DEPLOY
+TEST -- > GIVE NAME -- > SEE ON CLOUD SHELL
+
+YOU CAN SEE OUTPUT THROUGH URL AS WELL 
+
+CHECK METRICS TO SEE THE UTILIZATION AND DATA
+
+
+7. CLOUD RUNS: 
+automatically scales your containerized applications.
+
+
+Serverless:
+No server management. You just deploy your code in a container, and GCP handles the rest.
+
+Automatically scales up or down depending on incoming traffic 
+You deploy any app packaged as a Docker container Pay-per-use:
+You only pay for CPU, memory, and networking used during request handling.
+
+Fully managed or Anthos:
+Fully Managed: Google manages everything.
+Cloud Run for Anthos: Run Cloud Run on your own Kubernetes cluster (GKE).
+Supports CI/CD integration with Cloud Build, GitHub, GitLab, etc.
+IAM-based access control, VPC integration, and HTTPS out of the box.
+
+CLOUD RUN -- > DEPLOY TO CONTAINER -- > SAMPLE IMAGE -- > 
+Allow unauthenticated invocations -- > CREATE 
+CHECK URL YOU APPLICATION WILL BE RUNNING
+
+CREATE NEW CONTAINER BY USING EDIT AND DEPLOY OPTION
+SELECT CONTAINER AND DISTRIBUTE TRAFFIC 
+
+NEW SERVICE -- > TAKE CODE FROM REPO -- > CONFIGURE CLOUD BUILD -- > BRANCH MASTER -- > RUN 
+
+REPO: https://github.com/devopsbyraham/Zomato-Project.git
+GUI:
+CLICK ON CLOUD RUNS
+CONNECT REPO
+CLOUD BUILD
+AUTHENTICATE TO YOUR GITHUB
+SOURCE REPO: MASTER
+BUILD TYPE: ./
+
+
+
+
+CLI:
+gcloud run deploy my-service \
+  --image=gcr.io/my-project/my-image \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated
+
+
+8: GCLOUD:
+
+Its a cli tool used to interact with resources
+cloudshell -- > 
+gcloud --version
+gcloud init
+create a new configuration
+Select an account:
+Do you want to configure a default Compute Region and Zone? (Y/n)?  n
+gcloud config list
+
+
+
+COMMANDS:
+gcloud init
+select settings
+select account
+
+
+
+gcloud config list project
+gcloud config configurations list
+gcloud config configurations activate my-default-configuration
+gcloud config list
+
+gcloud compute instances create raham --zone=us-central1-a --machine-type=e2-micro --image-family=debian-11 --image-project=debian-cloud
+gcloud compute instances describe raham --zone=us-central1-a
+gcloud compute instances stop raham --zone=us-central1-a
+gcloud compute instances start raham --zone=us-central1-a
+gcloud compute instances restart raham --zone=us-central1-a
+gcloud compute instances delete raham --zone=us-central1-a
+gcloud compute ssh raham --zone=us-central1-a
+gcloud compute disks snapshot my-disk --zone=us-central1-a --snapshot-names=my-snapshot
+
+
+10. BILLINGS
+
+BILLINGS -- > BUDGETS AND ALEARTS -- > CREATE -- > NAME -- > AMOUNT -- > CREATE
+
+11. SERVICE ACCOUNT:
+  
+IAM & Admin → Service Accounts -- > Name: vm-service-account -- > ID: auto-generated -- > Description -- > Click Create and Continue.
+
+Permissions : Compute admin
+
+Assign roles (least privilege principle):
+
+Compute Instance Admin (v1) → roles/compute.instanceAdmin.v1
+If VM needs storage → roles/storage.objectViewer
+If VM needs logging → roles/logging.logWriter
+
+Click Done.
+
+
+
+TERRAFORM CODE FOR ALL K8S CLUSTERS:
+https://developer.hashicorp.com/terraform/tutorials/kubernetes/eks
+
+10. GKE:
+STEP-1: GKE -- > CREATE CLUSTER -- > Autopilot:
+STEP-2: NAME & REGION
+STEP-3: FLEET REGISTRATION
+STEP-4: Network and Node subnet : Default (POD : /17, SERVICE: /22)
+STEP-5: CREATE
+
+WAIT FOR 10 MINS TO CREATE CLUSTER
+
+STEP-6: CLICK ON DEPLOY & GIVE CONTAINER INFO 
+STEP-7: NOTE: REMOVE LIMITS AND REQUEST SECTION IF PODS ARE NOT RUNNING (LINE:127)
+STEP-8: ACCESS THE APPLICATION THROUGH THE SERVICE 
+STEP-9: UPDATE THE NEW IMAGE (rahamshaik/mynetflix:1.0)
+STEP-10: EXPLORE THE FOLLOWING OPTIONS
+
+
+
+Overview
+Details
+Observability
+Revision history
+Events
+Logs
+App errors 
+YAML
+
+
+===========================================================================================
+
+PATCHING:
+IT HELPS TO APPLY SECURITY FIXES, BUGS FOR OS.
+IT HELPS TO IMPORVE SECURITY, STABILITY AND COMPLIANCE FOR VMS.
+The first 100 VMs are available at no cost
+
+WHY IT IS IMP ?
+1. IMPROVE PERFOMANCE
+2. REDUCE ATTACKS DUE TO VULNERABILITY
+3. FIXES MEMORY LEAK
+
+
+HOW TO DO PATCHING ?
+NEVER DO PATCH FOR ALL SERVERS 
+USE ROLLING UPDATE 
+
+
+PRACTICAL PART:
+
+1. GO TO PATCH MANAGEER -- > CREATE A JOB 
+2. Select VM instances -- > MANUALLY -- > NEXT 
+3. Patch job name -- > APT -- > 
+4. Job schedule -- > tim 
+5. Zone rollout -- >  One zone at a time -- > 
+6. Post-patch reboot option -- > reboot: always 
+
+
+
+
+
+
+
+
+Pre script:
+
+
+#!/bin/bash
+
+LOG_FILE="/var/log/prepatch.log"
+THRESHOLD_CPU=80
+THRESHOLD_DISK=80
+
+echo "===== PRE-PATCH CHECK START $(date) =====" | tee -a $LOG_FILE
+
+# 1. Check CPU Load
+CPU_LOAD=$(top -bn1 | grep "load average" | awk '{print $10}' | cut -d',' -f1)
+echo "CPU Load: $CPU_LOAD" | tee -a $LOG_FILE
+
+# 2. Check Disk Usage
+DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+echo "Disk Usage: $DISK_USAGE%" | tee -a $LOG_FILE
+
+if [ "$DISK_USAGE" -gt "$THRESHOLD_DISK" ]; then
+echo "ERROR: Disk usage too high. Aborting patch." | tee -a $LOG_FILE
+exit 1
+fi
+
+# 3. Check Memory
+FREE_MEM=$(free -m | awk '/Mem:/ {print $4}')
+echo "Free Memory: ${FREE_MEM}MB" | tee -a $LOG_FILE
+
+if [ "$FREE_MEM" -lt 200 ]; then
+echo "ERROR: Not enough memory. Aborting patch." | tee -a $LOG_FILE
+exit 1
+fi
+
+# 4. Check Critical Services
+SERVICES=("nginx" "ssh")
+
+for SERVICE in "${SERVICES[@]}"; do
+systemctl is-active --quiet $SERVICE
+if [ $? -ne 0 ]; then
+echo "ERROR: $SERVICE is not running. Aborting patch." | tee -a $LOG_FILE
+exit 1
+fi
+done
+
+# 5. Optional: Create Snapshot Marker (for rollback tracking)
+echo "Creating pre-patch marker..."
+touch /tmp/prepatch_$(date +%F)
+
+echo "===== PRE-PATCH CHECK PASSED =====" | tee -a $LOG_FILE
+exit 0
+
+
+Post script:
+
+#!/bin/bash
+
+LOG_FILE="/var/log/postpatch.log"
+
+echo "===== POST-PATCH VALIDATION START $(date) =====" | tee -a $LOG_FILE
+
+# 1. Check System Uptime
+UPTIME=$(uptime -p)
+echo "System Uptime: $UPTIME" | tee -a $LOG_FILE
+
+# 2. Verify Services
+SERVICES=("nginx" "ssh")
+
+for SERVICE in "${SERVICES[@]}"; do
+systemctl is-active --quiet $SERVICE
+if [ $? -ne 0 ]; then
+echo "ERROR: $SERVICE is not running after patch!" | tee -a $LOG_FILE
+exit 1
+fi
+done
+
+# 3. Check Open Ports
+PORTS=(80 22)
+
+for PORT in "${PORTS[@]}"; do
+nc -z localhost $PORT
+if [ $? -ne 0 ]; then
+echo "ERROR: Port $PORT not responding!" | tee -a $LOG_FILE
+exit 1
+fi
+done
+
+# 4. Check Application Health Endpoint
+HEALTH_URL="http://localhost/health&quot;
+
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
+
+if [ "$HTTP_STATUS" != "200" ]; then
+echo "ERROR: Health check failed with status $HTTP_STATUS" | tee -a $LOG_FILE
+exit 1
+fi
+
+# 5. Scan Logs for Errors
+ERROR_COUNT=$(grep -i "error" /var/log/syslog | wc -l)
+
+echo "Error count in logs: $ERROR_COUNT" | tee -a $LOG_FILE
+
+echo "===== POST-PATCH VALIDATION SUCCESS =====" | tee -a $LOG_FILE
+exit 0
+
+
+
+
+S3 DATA MIGRATION:
+STEP-1: CREATE A BUCKET IN AWS UPLOAD SOME DATA
+STEP-2: CREATE S3 IAM USER WITH ACCESS KEYS
+STEP-3: CREATE A GCP BUCKET
+STEP-4: STORAGE TRANSFER -- > CREATE A JOB 
+
+
+source	: aws -- > dest	: gcp -- > next
+source bucket: aws bucket -- > next -- > dest bucket: gcp bucket 
+job: run once -- > next --  > create 
+
+
+VM MIGRATION:
+API TO ENABLE: COMPUTE ENGINE, IAM, CLOUD MIGRATION, CLOUD STORGAE
+Transfer Appliance API
+
+STEP-1: CREATE A VM IN AWS & DEPLOY AN APP
+STEP-2: GO TO Migrate to Virtual Machines 
+STEP-3: ADD SOURCE OF AWS (takes 5 to 10 mins)
+STEP-4: SELECT VM AND ADD MIGRATION 
+STEP-5: MIGRATE VM -- >SELECT -- > START REPLICATION
+
+
+========================================================================================================
+NOTE: YOU NEED TO USE YOU ORIGINAL EMAIL TO CREATE IAM USER
+
+
+STEP-1: IAM & ADMIN -- > IAM -- > GRANT ACCESS -- > PRINCIPLE: GIVE EMAIL -- > ROLE: COMPUTE ADMIN -- > SAVE
+
+
+DATABASE:
+SEARCH FOR DATABASE
+CLOUDSQL
+GIVEI INFORMATION 
+CREATE
+
+
+STEP-2: CREATE A VM
+STEP-3: CREATE A FIRE WALL (VPC -- > FIRE WALL -- > FIREWALL RULE -- > DETAILS)
+STEP-4: ADD TAG TO VM (SELECT VM -- > EDIT -- > NETWORK TAGS -- > GIVE TAG -- > SAVE)
+STEP-5: INSTALLING MYSQL (apt update && sudo apt install mysql-server -y)
+
+
+
+
+=================================================================================
+
+Displaying GCP NOTES.txt.
