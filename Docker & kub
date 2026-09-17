@@ -1,0 +1,4016 @@
+
+Docker & K8s Notes.txt
+100%
+APPLICATION: Collection of services 
+
+MONOLITHIC: multiple services are deployed on single server with single database.
+MICRO SERVICES: multiple services are deployed on multiple servers with multiple database.
+
+BASED ON USERS AND APP COMPLEXITY WE NEED TO SELECT THE ARCHITECTURE.
+
+FACTORS AFFECTING FOR USING MICROSERVICES:
+F-1: COST 
+F-2: MAINTAINANCE
+F-3: TIME
+
+CONTAINERS:
+its free of cost and can create multiple containers.
+its same as a server/vm.
+it will not have any operating system.
+os will be on images.
+(SERVER=AMI, CONTAINER=IMAGE)
+
+CONTAINER TOOLS: DOCKER, CONTAINERD, ROCKET, CRI-O, PODMAN, KATA CONTAINER ----
+
+DOCKER: 
+Its an free & opensource tool.
+it is platform independent.
+used to create, run & deploy applications on containers.
+it is introduced on 2013 by solomenhykes & sebastian phal.
+We used GO language to develop the docker.
+here we write files on YAML.
+Docker will use host resources (cpu, mem, n/w, os).
+Docker can run on any OS but it natively supports Linux distributions.
+before docker user faced lot of problems, but after docker there is no issues with the application.
+
+CONTAINERIZATION/DOCKERIZATION:
+Process of packing an application with its dependencies.
+ex: PUBG
+
+APP= PUBG & DEPENDECY = MAPS
+APP= CAKE & DEPENDECY = KNIFE
+
+os level of virtualization.
+
+VIRTUALIZATION:
+able to create resource with our hardware properties.
+
+ARCHITECTURE & COMPONENTS:
+client: it will interact with user
+user gives commands and it will be executed by docker client
+
+daemon: manages the docker components(images, containers, volumes)
+
+host: where we install docker (ex: linux, windows, macos)
+
+Registry: manages the images.
+INSIDE THE IMAGE WE HAVE OS TO RUN THE CONTAINER.
+
+ARCHITECTURE OF DOCKER:
+
+DOCKER INSTALLATION ON AMAZON LINUX:
+yum install docker -y    #client
+systemctl start docker	 #client,Engine
+systemctl status docker
+
+
+DOCKER INSTALLATION ON UBUNTU:
+apt update
+apt install docker.io -y    #client
+systemctl start docker	 #client,Engine
+systemctl status docker
+
+COMMANDS:
+docker pull ubuntu	: pull ubuntu image
+docker images		: to see list of images
+docker run -it --name cont1 ubuntu : to create a container
+-it (interactive) - to go inside a container
+cat /etc/os-release	: to see os flavour
+
+apt update -y	: to update 
+redhat=yum
+ubuntu=apt
+without update we cant install any pkg in ubuntu
+
+apt install git -y
+apt install apache2 -y
+
+ctrl p q		: to exit container
+docker ps -a		: to list all containers
+docker attach cont_name	: to go inside container
+docker stop cont_name	: to stop container
+docker start cont_name	: to start container
+docker pause cont_name	: to pause container
+docker unpause cont_name: to unpause container
+docker inspect cont_name: to get complete info of a container
+docker rm cont_name	: to delete a container
+
+STOP: will wait to finish all process running inside container
+KILL: wont wait to finish all process running inside container
+=========================================================================
+
+OS LEVEL OF VIRTUALIZATION:
+ability to take backup of complete os and reuse it.
+
+docker pull ubuntu
+docker run -it --name cont1 ubuntu
+apt update -y
+apt install mysql-server apache2 python3 -y
+touch file{1...5}
+apache2 -v
+mysql-server --version
+python3 --version
+ls
+
+ctrl p q
+
+docker commit cont1 raham:v1
+docker run -it --name cont2 raham:v1
+apache2 -v
+mysql-server --version
+python3 --version
+ls
+
+
+DOCKERFILE:
+it is an automation way to create image.
+here we use components to create image.
+This Dockerfile will be Reuseable.
+
+Name: Dockerfile
+
+in Dockerfile D must be Capiatl.
+Components also capital.
+To write our instructions we need to use components in Dockerfile
+here we can create image directly without container help.
+
+docker kill $(docker ps -qa)
+docker rm $(docker ps -qa)
+docker rmi -f $(docker images -qa)
+
+COMPONENTS:
+
+FROM		: used to base image
+RUN		: used to run linux commands (During image creation)
+CMD		: used to run linux commands (After container creation)
+ENTRYPOINT	: high priority than cmd
+COPY		: to copy local files to container
+ADD		: to copy internet files to container
+WORKDIR		: to open req directory
+ENV		: to set env variables (inside container)
+ARGS		: to pass env variables (outside containers)
+LABEL		: to add labels for docker images
+EXPOSE		: to indicate port number
+VOLUME
+NETWORK
+
+
+ENTRYPOINT VS CMD:
+
+FROM ubuntu
+ENTRYPOINT ["sleep"]
+CMD ["1000"]
+
+
+
+EX-1:
+FROM ubuntu
+RUN  apt update
+RUN apt install apache2 -y
+RUN apt install python3 -y
+CMD apt install mysql-server -y
+
+docker build -t raham:v1 .
+docker run -it --name cont1 raham:v1 
+
+EX-2:
+FROM ubuntu
+COPY index.html /tmp
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.102/bin/apache-tomcat-9.0.102.tar.gz /tmp
+
+docker build -t raham:v2 .
+docker run -it --name cont2 raham:v2
+
+EX-3:
+FROM ubuntu
+COPY index.html /tmp
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.107/bin/apache-tomcat-9.0.107.tar.gz /tmp
+WORKDIR /tmp
+ENV user raham
+ENV client swiggy
+
+docker build -t raham:v3 .
+docker run -it --name cont3 raham:v3
+
+EX-4:
+
+FROM ubuntu
+LABEL author raham
+EXPOSE 8080
+
+docker build -t raham:v4 .
+docker run -it --name cont4 raham:v4
+ctrl p q
+docker inspect cont4
+
+INDEX.HTML LINK: https://www.w3schools.com/howto/tryit.asp?
+filename=tryhow_css_form_icon
+
+NETFLIX-DEPLOYMENT:
+
+apt install git -y
+git clone https://github.com/RAHAMSHAIK007/netflix-clone.git
+cd netflix-clone/
+
+Vi Dockerfile
+
+FROM ubuntu
+RUN apt update
+RUN apt install apache2 -y
+COPY * /var/www/html/
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
+
+
+docker build -t netflix:v1 .
+docker run -it --name netflix1 -p 81:80 netflix:v1
+
+MULTI-STAGE BUILD:
+With multi-stage builds, you use multiple FROM statements in your Dockerfile
+if we build image-1 from docker file and use that image-1 to build other image.
+
+
+Dockerfile
+FROM  ubuntu
+---------
+----------
+
+build image1
+
+FROM image1  -- > multi-stage build
+-----
+-------
+
+ADV:
+less time
+less work
+less size
+less complexity
+
+===================================================================================
+
+vim Dockerfile
+
+FROM ubuntu
+RUN apt update -y
+RUN apt install apache2 -y
+COPY index.html /var/www/html
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
+
+Index.html: take form w3 schools 
+https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_form_icon	
+
+docker build -t movies:v1 .
+docker run -itd --name movies -p 81:80 movies:v1
+
+docker build -t train:v1 .
+docker run -itd --name train -p 82:80 train:v1
+
+docker build -t dth:v1 .
+docker run -itd --name dth -p 83:80 dth:v1
+
+docker build -t recharge:v1 .
+docker run -itd --name recharge -p 84:80 recharge:v1
+
+docker ps -a -q		: to list container ids
+docker kill $(docker ps -a -q) : to kill all containers 
+docker rm $(docker ps -a -q) : to remove all containers 
+
+Note: In the above process all the containers are managed and created one by one in real time we manage all the containers at same time 
+so for that purpose we are going to use the concept called Docker compose.
+
+
+DOCKER COMPOSE:
+It's a tool used to manage multiple containers in single host.
+we can create, start, stop, and delete all containers together.
+we write container information in a file called a compose file.
+compose file is in YAML format.
+inside the compose file we can give images, ports, and volumes info of containers.
+we need to download this tool and use it.
+
+INSTALLATION:
+curl -SL https://github.com/docker/compose/releases/download/v2.40.3/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+docker-compose version
+
+
+In Linux majorly you are having two type of commands first one is inbuilt commands which come with the operating system by default 
+second one is download commands we are going to download with the help of yum, apt or Amazon Linux extras.
+some commands we can download on binary files.
+
+NOTE: linux will not give some commands, so to use them we need to download seperately
+once a command is downloaded we need to move it to /usr/local/bin
+because all the user-executed commands in linux will store in /usr/local/bin
+executable permission need to execute the command
+
+
+
+vim docker-compose.yml
+
+
+services:
+  movies:
+    image: movies:v1
+    ports:
+      - "81:80"
+  train:
+    image: train:v1
+    ports:
+      - "82:80"
+  dth:
+    image: dth:v1
+    ports:
+      - "83:80"
+  recharge:
+    image: recharge:v1
+    ports:
+      - "84:80"
+
+COMMANDS:
+docker-compose up -d		: to create and start all containers
+docker-compose stop		: to stop all containers
+docker-compose start		: to start all containers
+docker-compose kill		: to kill all containers
+docker-compose rm		: to delete all containers
+docker-compose down		: to stop and delete all containers
+docker-compose pause		: to pause all containers
+docker-compose unpause		: to unpause all containers
+docker-compose ps -a		: to list the containers managed by compose file
+docker-compose images		: to list the images managed by compose file
+docker-compose logs		: to show logs of docker compose
+docker-compose top		: to show the process of compose containers
+docker-compose restart		: to restart all the compose containers
+docker-compose scale train=10	: to scale the service
+
+
+CHANGING THE DEFULT FILE:
+
+by default the docker-compose wil support the following names
+docker-compose.yml, docker-compose.yaml, compose.yml, compose.yaml
+
+mv docker-compose.yml raham.yml
+docker-compose up -d	: throws an error
+
+docker-compose -f raham.yml up -d
+docker-compose -f raham.yml ps
+docker-compose -f raham.yml down
+
+
+images we create on server.
+these images will work on only this server.
+
+git (local) -- > github (internet) = to access by others
+image (local) -- > dockerhub (internet) = to access by others
+
+CREATE  A DOCKERHUB ACCOUNT
+CLICK ON DOTS -- > DOCKER HUB -- > CREATE REPOSITORY
+ 	
+Replace your username 
+
+STEPS:
+create dockerhub account
+create a repo
+
+docker tag movies:v1 vijaykumar444p/movies
+docker login -- > username and password
+docker push vijaykumar444p/movies
+
+docker login -- > username and password
+
+docker tag train:v1 vijaykumar444p/train
+docker push vijaykumar444p/train
+
+
+docker tag dth:v1 vijaykumar444p/dth
+docker push vijaykumar444p/dth
+
+docker tag recharge:v1 vijaykumar444p/recharge
+docker push vijaykumar444p/recharge
+
+docker rmi -f $(docker images -q)
+docker pull vijaykumar444p/movies:latest
+
+
+
+INSTALLING MULTIPLE TOOLS:
+docker run -it --name jenkins -p 8080:8080 jenkins/jenkins:lts
+docker run -d --name prometheus-container -p 9090:9090 ubuntu/prometheus:2-24.04_stable
+
+docker run -d --name=grafana -p 3000:3000 grafana/grafana
+
+DOCKER SAVE:
+docker image save swiggy:v1 > swiggy:v1.tar :covert image to file 
+docker image history swiggy:v1
+docker rmi swiggy:v1
+docker images
+docker image load < swiggy\:v1.tar
+
+
+COMMAND TO ZIP:  gzip dummy:v5.tar abc.zip
+DECOMPRESS COMMAND: gzip movies:latest.gz -d
+
+COMPRESSING DOCKER IMAGE SIZE:
+1. push to dockerhub
+2. use multi stage docker build
+3. reduce layers
+4. use tar balls
+
+=================================================================================
+
+High Avaliabilty: more than one server
+why: if one server got deleted then other server will gives the app
+
+DOCKER SWARM:
+its an orchestration tool for containers. 
+used to manage multiple containers on multiple servers.
+here we create a cluster (group of servers).
+here we have the manager node and worker node.
+manager node will create & distribute the container to worker nodes.
+worker node's main purpose is to maintain the container.
+without docker engine we cant create the cluster.
+Port: 2377
+worker node will join on cluster by using a token.
+manager node will give the token.
+
+
+docker swarm join --token SWMTKN-1-2hlbbmgpw65ciunzowk7692vigc7d74arft7xpg35a72fkn9lu-577e38366sinrwo9heo9pn0wn 172.31.83.232:2377
+
+SETUP:
+create 3 servers
+install docker and start the service
+hostnamectl set-hostname manager/worker-1/worker-2
+Enable 2377 port 
+
+docker swarm init (manager) -- > copy-paste the token to worker nodes
+docker run -itd --name cont1 -p 81:80  vishalmunemanik111/movies:latest
+docker node ls
+
+Note: individual containers are not going to replicate.
+if we create a service then only containers will be distributed.
+
+SERVICE: it's a way of exposing and managing multiple containers.
+in service we can create copy of conatiners.
+that container copies will be distributed to all the nodes.
+
+service -- > containers -- > distributed to nodes
+
+
+
+
+docker service create --name movies --replicas 3 -p 81:80 vijaykumar444p/movies:latest
+docker service ls		: to list services
+docker service inspect movies	: to get complete info of service
+docker service ps movies	: to list the containers of movies
+docker service scale movies=10	: to scale in the containers
+docker service scale movies=3	: to scale out the containers
+docker service rollback movies	: to go previous state
+docker service logs movies	: to see the logs
+docker service rm movies	: to delete the services.
+
+when scale in it follows lifo pattern.
+LIFO MEANS LAST-IN FIRST-OUT.
+
+Note: if we delete a container it will recreate automatically itself.
+it is called as self healing.
+
+
+CLUSTER ACTIVIES:
+docker swarm leave (worker)	: to make node inactive from cluster
+To activate the node copy the token.
+docker node rm node-id (manager): to delete worker node which is on down state
+docker node inspect node_id	: to get comple info of worker node
+docker swarm join-token manager	: to generate the token to join
+
+Note: we cant delete the node which is ready state
+if we want to join the node to cluster again we need to paste the token on worker node
+
+
+DOCKER NETWORKING:
+Docker networks are used to make communication between the multiple containers that are running on same or different docker hosts. 
+
+We have different types of docker networks.
+Bridge Network		: SAME HOST
+Overlay network		: DIFFERENT HOST
+Host Network
+None network
+
+BRIDGE NETWORK: It is a default network that container will communicate with each other within the same host.
+
+OVERLAY NETWORK: Used to communicate containers with each other across the multiple docker hosts.
+
+HOST NETWORK: When you Want your container IP and ec2 instance IP same then you use host network
+
+NONE NETWORK: When you don’t Want The container to get exposed to the world, we use none network. It will not provide any network to our container.
+
+
+To create a network: docker network create network_name
+To see the list: docker network ls
+To delete a network: docker network rm network_name
+To inspect: docker network inspect network_name
+To connect a container to the network: docker network connect network_name container_id/name
+docker exec -it cont1  /bin/bash
+apt update
+apt install iputils-ping -y : command to install ping checks
+ping ip-address of cont2
+crtl pq
+
+To disconnect from the container: docker network disconnect network_name container_name
+To prune: docker network prune
+
+
+PORTAINER:
+it is a container organizer, designed to make tasks easier, whether they are clustered or not. 
+abel to connect multiple clusters, access the containers, migrate stacks between clusters
+it is not a testing environment mainly used for production routines in large companies.
+Portainer consists of two elements, the Portainer Server and the Portainer Agent. 
+Both elements run as lightweight Docker containers on a Docker engine
+
+Must have swarm mode and all ports enable with docker engine
+curl -L https://downloads.portainer.io/ce2-16/portainer-agent-stack.yml -o portainer-agent-stack.yml
+docker stack deploy -c portainer-agent-stack.yml portainer
+ docker ps
+public-ip of swamr master:9000
+
+
+
+DATABASE SETUP:
+docker run -itd --name dbcont -e MYSQL_ROOT_PASSWORD=raham123 mysql:9.0.1
+docker exec -it dbcont /bin/bash
+mysql -u root -p
+
+docker run -it --rm -p 8888:8080 tomcat:9.0
+
+==========================================================================
+
+DOCKER VOLUMES:
+
+It is used to store data inside container.
+volume is a simple directory inside container.
+containers uses host resources (cpu, ram, rom).
+single volume can be shared to multiple containers.
+ex: cont-1 (vol1)  --- > cont2 (vol1) & cont3 (vol1) & cont4 (vol1)
+at a time we can share single volume to single container only.
+every volume will store under /var/lib/docker/volumes
+
+
+
+METHOD-1:
+DOCKER FILE:
+
+FROM ubuntu
+VOLUME ["/volume1"]
+
+docker build -t raham:v1 .
+docker run -it --name cont1 raham:v1
+cd volume1/
+touch file{1..5}
+cat>file1
+ctrl d
+ctrl p q
+
+docker run -it --name cont2 --volumes-from cont1  ubuntu
+cd /volume1
+ll
+touch file{6..10}
+ctrl pq
+
+docker attach cont1
+cd volume1
+ll
+
+docker run -it --name cont3 --volumes-from cont1 ubuntu
+
+METHOD-2:
+FROM CLI:
+
+docker run -it --name cont4 -v volume2 ubuntu
+cd volume2/
+touch java{1..5}
+ctrl p q
+
+docker run -it --name cont5 --volumes-from cont4  ubuntu
+cd volume2
+ll
+touch java{6..10}
+ctrl p q
+docker attach cont4
+ls
+
+
+METHOD-3: VOLUME MOUNTING
+
+docker volume ls 		: to list volumes
+docker volume create name	: to create volume
+docker volume inspect volume3	: to get info of volume3
+cd /var/lib/docker/volumes/volume3/_data 
+touch python{1..5}
+docker run -it --name cont6 --mount source=volume3,destination=/abc ubuntu
+docker volume rm 	: to delete volumes
+docker volume prune	: to delete unused volumes
+
+HOST -- > CONTAINER:
+
+cd /root
+touch raham{1..5}
+docker volume inspect volume4
+cp * /var/lib/docker/volumes/volume4/_data
+docker exec cont5 ls /volume4
+
+
+RESOURCE MANAGEMENT:
+By default, docker containers will not have any limits for the resources like cpu ram and memory so we need to restrict resource use for container.
+
+By default docker containers will use host resources(cpu, ram, rom)
+Resource limits of docker container should not exceed the docker host limits.
+
+docker stats  --> to check live cpu and memory
+
+docker run -it --name cont7 --cpus="0.1" --memory="300mb" ubuntu
+docker update cont7 --cpus="0.7" --memory="300mb"
+
+JENKINS SETUP BY DOCKER:
+docker run -it --name jenkins -p 8080:8080 jenkins/jenkins:lts
+
+PROMETHEUS SETUP BY DOCKER:
+docker run -it --name prometheus -p 9090:9090 bitnami/prometheus:latest
+
+GRAFANA SETUP BY DOCKER:
+docker run -it --name grafana -p 3000:3000 grafana/grafana
+
+TRIVY:
+ITS A TOOL USED TO SCAN IMAGES AND FILE SYSTEMS
+IT ENSURE OUR IMAGES ARE SAFE AND SECURE BEFORE WE USE THEM
+
+wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.tar.gz
+tar zxvf trivy_0.18.3_Linux-64bit.tar.gz
+sudo mv trivy /usr/local/bin/
+echo "export PATH=$PATH:/usr/local/bin/" >> .bashrc
+source .bashrc 
+
+
+COMMANDS:
+
+trivy image raham:v1
+trivy image ubuntu:latest
+docker pull ubuntu:22.04
+trivy image ubuntu:22.04
+docker pull nginx:1.19.6 #1.19.6 specifies the vulnerable version of the nginx image
+trivy image nginx:1.19.6
+trivy filesystem /
+===================================================================================================================
+
+STEP-1: LAUNCH AN INSTANCE WITH T2.LARGE AND EBS 30 ON UBUNTU 24.04
+STEP-2: INSTALL JENKINS, GIT, DOCKER & TRIVY
+
+JENKINS:
+#! /bin/bash
+sudo apt update -y
+sudo apt install fontconfig openjdk-21-jre
+java -version
+
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install Jenkins
+
+
+DOCKER:
+apt install docker.io -y
+chmod 777 ///var/run/docker.sock
+
+TRIVY:
+wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.tar.gz
+tar zxvf trivy_0.18.3_Linux-64bit.tar.gz
+sudo mv trivy /usr/local/bin/
+echo "export PATH=$PATH:/usr/local/bin/" >> .bashrc
+source .bashrc 
+
+
+STEP-3: INSTALL THE FOLLOWING JENKINS PLUGINS
+
+
+SONAR SCANNER
+NODEJS
+OWASP DEPENDENCY CHECK
+DOCKER PIPELINE
+Eclipse Temurin installerVersion
+Pipeline stage view
+
+
+
+PROJECT PIPELINE CODE:
+
+pipeline {
+    agent any
+    
+    tools {
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
+    environment {
+        SCANNER_HOME = tool 'mysonar'
+    }
+    stages {
+        stage("Clean WS") {
+            steps {
+                cleanWs()
+            }
+        }
+        stage("Code") {
+            steps {
+                git "https://github.com/devops0014/Zomato-Project.git"
+            }
+        }
+        stage("Sonarqube Analysis") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh """$SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=zomato \
+                        -Dsonar.projectKey=zomato"""
+                }
+            }
+        }
+        stage("Quality Gates") {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                }
+            }
+        }
+        stage("Install Dependencies") {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage("OWASP") {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: ' /dependency-check-report.xml'
+            }
+        }
+        stage("Trivy") {
+            steps {
+                sh 'trivy fs . > trivyfs.txt'
+            }
+        }
+        stage("Build") {
+            steps {
+                sh 'docker build -t image1 .'
+            }
+        }
+        stage("Tag & Push") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-password') {
+                        sh 'docker tag image1 rahamshaik/mydockerprojectfor5pm:myzomatoimage'
+                        sh 'docker push rahamshaik/mydockerprojectfor5pm:myzomatoimage'
+                    }
+                }
+            }
+        }
+        stage("Scan the Image") {
+            steps {
+                sh 'trivy image rahamshaik/mydockerprojectfor5pm:myzomatoimage'
+            }
+        }
+        stage("Container") {
+            steps {
+                sh 'docker run -d --name cont1 -p 3000:3000 rahamshaik/mydockerprojectfor5pm:myzomatoimage'
+            }
+        }
+    }
+}
+
+
+
+
+
+Key Differences
+Feature		OWASP				SonarQube
+Focus		Web app security risks		Code quality & security
+Type		Security framework/tools	Static code analysis tool
+Approach	Scanning live apps, guidelines	Scanning source code
+Use Cases	Finding web vulnerabilities	Improving code quality, security
+
+
+CODE   LEVEL SECURITY	: SONARQUBE
+APP     LEVEL SECURITY	: OWASP
+IMAGE  LEVEL SECURITY	: TRIVY
+
+
+When to Use What?
+Use OWASP when you need security best practices, penetration testing, and live application security assessments.
+
+Use SonarQube when you need automated code analysis for vulnerabilities, bugs, and maintainability in your source code.
+
+WHAT IS TRIVY: 
+
+Trivy is an open-source security scanner for containers, Kubernetes, infrastructure as code (IaC), and dependencies. It helps detect vulnerabilities, misconfigurations, and secrets in various environments.
+
+How Trivy Works
+It fetches vulnerability data from sources like NVD, Red Hat, Debian, and GitHub Security Advisories.
+Scans images, filesystems, repositories, or Kubernetes clusters.
+Outputs results in various formats like JSON, table, and SARIF (for security tools).
+
+Why Use Trivy?
+✅ Fast & lightweight – Minimal setup and quick scanning.
+✅ Comprehensive – Covers multiple security aspects (CVEs, misconfigurations, secrets).
+✅ Easy integration – Works with Docker, Kubernetes, and CI/CD pipelines.
+
+
+DEPENENCY CHECK:
+It  is an open source tool performing analysis of 3rd party dependencies; 
+NOTE: false positives and false negatives may exist in the analysis performed by the tool. 
+
+Use of the tool and the reporting provided constitutes acceptance for use in an AS IS condition, and there are NO warranties, implied or otherwise, with regard to the analysis or its use. Any use of the tool and the reporting provided is at the user’s risk. In no event shall the copyright holder or OWASP be held liable for any damages whatsoever arising out of or in connection with the use of this tool, the analysis performed, or the resulting report.
+
+NOTE: PLEASE CHECK DOCKER PROJECT PDF WHICH IS UPLOADED TO GOOGLE CLASS ROOM
+
+
+=====================================================================================
+
+PRODUCTION LEVEL WORKS FOR INTERVIEW :
+
+1. WHAT IS MULTI STAGE DOCKER FILE
+
+
+FROM ubuntu as Builder
+RUN apt update -y && apt install nginx -y
+COPY * /var/www/html
+CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+
+#MULTI STAGE BUILD
+FROM nginx
+COPY --from=Builder /var/www/html /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+HOW DO YOU REDUCE DOCKER IMAGE SIZE
+
+1. USE MULTI STAGE DOCKERFILE
+2. USE MININAL BASE IMAGE
+3. REDUCE THE LAYERS
+4. .dockerignore 
+5. save the images to zip files and unload them later
+
+
+DOCKER PRODUCTION LEVEL COMMANDS ?
+docker stats
+docker logs container-name
+docker exec -it container-name /bin/bash
+docker inspect  container-name
+docker system df -v : to show complete information about docker system
+docker system prune -- < remove all un-used images containers build cahe
+
+
+DOCKER SCOUT ?
+its a built in tool for docker
+Designed to improve software supply chain security
+Used to scan images and check Common Vulnerability
+ 
+docker scout quickview amazon:v1 
+docker scout cves amazon:v1
+docker scout recommendations amazon:v1
+
+WHAT IS DANGLING IMAGES ?
+Its a layers in docker that are not associated with any tagged image 
+it consumes lot of space and better to delete them
+
+
+
+====================================================================================
+
+ECS & ECR:
+
+ECS:
+
+Amazon Elastic Container Service (Amazon ECS) is a highly scalable and fast container management service. 
+Used to create, run, stop, and manage containers on a cluster. 
+ECS doesn’t have any server and compute power (CPU & Ram).
+Can be able to do roll back.
+With Amazon ECS, your containers are defined in a task definition that you use to run an individual task or task within a service.
+Deploy & load balance application across multiple servers.
+It will do auto scaling to handle the large traffic.
+You can run your tasks and services on a serverless infrastructure that's managed by AWS Fargate. 
+Alternatively, for more control over your infrastructure, you can run your tasks and services on a cluster of Amazon EC2 instances that you manage.
+
+
+DOCKER-COMPOSE VS ECS:
+When we use the docker-compose file to deploy it contains all the configuration of containers.
+For example if we have 3 servers we cannot deploy to all the containers at the same time, and if you do the same deployment on all three servers individually it cannot able to know all the 3 servers are manging the same application which is major disadvantage.
+Docker compose cannot able to do automatic load balancing and Auto scaling.
+Instead of using K8S, Swarm, Apahe Mesos and NoMad we can use ECS which is alternative for those
+Apache Mesos is the opposite of virtualization because in virtualization one physical resource is divided into multiple virtual resources, while in Mesos multiple physical resources are clubbed into a single virtual resource.
+
+
+ECS LAUNCH TYPES
+WORKING WITH EC2:
+Here we are going to manage the infrastructure ie instances.
+We need to install ECS agent to communicate.
+Need to set Firewall.
+We need to make sure all the patches is done for recent updates.
+Finally you can manage the containers and configure it as per your requirments.
+
+WORKING WITH FARGET:
+It follow serverless Architecture.
+We don’t have EC2 instances so need not maintain them.
+It will create servers on demand.
+We will pay for what we use here.
+
+
+ECS TASKS:
+A task definition is required to run Docker containers in Amazon ECS. Simply it is the blue print for containers and how it is deployed.  It will contain
+The Docker image to use with each container in your task for Application.
+How much CPU and memory to use with each task or each container within a task
+The infrastructure that your tasks are hosted on
+The Docker networking mode to use for the containers in your task
+The logging configuration to use for your tasks
+Whether the task continues to run if the container finishes or fails
+The command that the container runs when it's started
+Any data volumes that are used with the containers in the task
+The IAM role that your tasks use
+
+ECS SERVICES:
+A service definition defines how to run your Amazon ECS service.
+It will ensure that certain tasks are running at all times.
+It will restart the containers that is crashed or exited.
+For example if you have an application we want 2 instances/containers tp run our application all time, we say this to service then it will create 2 instances/containers and start running our application.
+If any instance fail it will restart the task.
+LOAD BALANCERS:
+The main intention is to distribute the traffic here.
+If we have app is deployed we can assign the LB and route the traffic to resources.
+If we scale our instance the LB is here able to drive the traffic to newly created instance.
+
+
+
+HOSTING AN APPLICATION ON ECS:
+UPLOADING IMAGE TO ECR:
+Amazon Elastic Container Registry (ECR) is a fully managed container registry.
+Easy to store, manage, share, and deploy your container images and artifacts anywhere.
+It supports private repositories with resource-based permissions using AWS IAM. 
+Specified users or EC2 instances can access your container repositories and images. 
+You can use your preferred CLI to push, pull, and manage Docker images, Open Container Initiative (OCI) images, and OCI compatible artifacts.
+
+
+STEPS: WORK ON MUMBAI REGION
+
+1. CREATE EC2 AND INSTALL GIT & DOCKER
+yum install git docker -y
+systemctl start docker
+systemctl status docker
+
+2. GET THE CODE AND CREATE A IMAGE
+git clone https://github.com/RAHAMSHAIK007/netflix-clone.git
+cd netflix-clone
+
+vim Dockefile
+
+FROM ubuntu
+RUN apt update && apt install apache2 -y
+COPY * /var/www/html/
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
+
+docker build -t swiggy:v1 .
+
+3. CREATE A REPO ON ECR AND PUSH THE SIMAGE
+
+ECR -- > CREATE -- > NAME: SWIGGY -- > SCAN IMAGE -- > CREATE REPO
+
+View push commands
+NOTE: USE ACCESS KEY AND SECRET KEYS FOR AUTHENTICATION
+RUN ALL THE 4 COMMANDS SETP BY STEP TO PUSH IMAGE TO ECR.
+
+
+EXPLORE FOLLOWING OPTIONS:
+SCANNING
+PERMISSION
+REPLICATION
+CACHE PULL
+LIFECYCLE
+
+
+4. CREATE TASK DEFINATION.	
+TASK DEFINATAION -- > CREATE -- > Task definition family: Netflix -- > AWS Fargate -- > ceate a new role -- > VALUES UPTO YOUR CHOICE -- > CREATE
+
+
+5. CREATE A CLUSTER BY USING FARGETE.
+ECS -- > CLUSTER -- > CREATE -- > NAME -- > 
+AWS Fargate (serverless) -- > CREATE
+
+
+6. CREATE SERVICE 
+
+ECS =-- > CLUSTER --  > SERVICE -- > CREATE -- > FARGATE -- > TASK -- > NETFLIX -- > DESIRED TASKS: 3 -- > LOAD BALANC AND ASG -- > CREATE
+
+NOTE: DELETE TASKS BEFORE DELETE CLUSTER.
+
+
+===============================================================================================================================
+
+DOCKER ALTERNATIVES: containerd, rocket, cri-o, Podman, Kata Containers
+
+
+CHIRU   : CLUSTER
+NAGABABU: NODE
+PAWAN   : POD
+CHARAN	: CONTAINER
+ALLU	: APP
+
+K8S:
+
+LIMITATIONS OF DOCKER SWARM:
+1. CANT DO AUTO-SCALING AUTOMATICALLY
+2. CANT DO LOAD BALANCING AUTOMATICALLY
+3. CANT DO LOAD ADVANCE NETWORKING.
+4. CANT HAVE DEFAULT DASHBOARD
+5. USED FOR EASY APPS. 
+
+HISTORY:
+Initially Google created an internal system called Borg (later called as omega) to manage its thousands of applications  [JOE, BURNS]
+later they donated the borg system to cncf and they make it as open source. 
+initial name is Borg but later cncf rename it to Kubernetes 
+the word Kubernetes originated from Greek word called pilot or Hailsmen.
+Borg: 2014
+K8s first version came in 2015.
+IT is an free and open-source container orchestration platform.
+It is used to automates many of the manual processes like deploying, managing, and scaling containerized applications.
+
+
+
+ARCHITECTURE:
+
+DOCKER : CNCA
+K8S: CNPCA
+
+C : CLUSTER
+N : NODE
+P : POD
+C : CONTAINER
+A : APPLICATION
+
+
+COMPONENTS:
+MASTER:
+
+1. API SERVER: communicate with user (takes command execute & give op)
+2. ETCD: database of cluster (stores complete info of a cluster ON KEY-VALUE pair)
+3. SCHEDULER: select the worker node to schedule pods (depends on hw of node)
+4. CONTROLLER: control the k8s objects (n/w, service, Node)
+
+WORKER:
+
+1. KUBELET : its an agent (it will inform all activites to master) It create containers.
+2. KUBEPROXY: it deals with nlw (ip, networks, ports)
+3. POD: group of conatiners (inside pod we have app)
+4. CONTAINER ENGINE: Create Containers
+
+Note: all components of a cluster will be created as a pod.
+
+API SERVER          : FATHER
+ETCD                : MARRIAGE BROKER
+SCHEDULER           : BRIDE
+CONTROLLER          : MOTHER
+
+KUBLET              : SIBBLINGS
+KUBE PROXY          : RELATIVES 
+POD                 : FUNCTION HALL
+
+
+API-SERVER  : FATHER                       : COMMUNICATION TO K8S CLUSTER
+ETCD        : MARRIAGE BROKER : STORE CLUSTER-INFORAMTION 
+SCHEDULER   : BRIDE                          : TO SELECT THE NODE TO PLACE POD   
+CONTROLLER  : MOTHER                     : NODE, RC, SC, NC ---------------
+
+KUBELET     : SIBBLINGS                  :  INFORM ALL ACTIVITES TO API-SERVER
+KUBE-PROXY  : RELATIVES                   :  DEAL WITH NETWORK 
+POD         : FUNCTION HALL        :  GROUP OF CONTAINER
+
+
+
+CLUSTER TYPES:
+
+1. SELF MANAGED: WE NEED TO CREATE & MANAGE THEM
+
+minikube = single node cluster
+kubeadm = multi node cluster (manual)
+kops = multi-node cluster (automation)
+kind:
+k9s:
+kubespray:
+
+
+2. CLOUD-BASED: CLOUD PROVIDERS WILL MANAGE THEM
+
+AWS = EKS = ELASTIC KUBERNETES SERVICE
+AZURE = AKS = AZURE KUBERENETS SERVICE
+GOOGLE = GKE = GOOGLE KUBERENETS ENGINE
+
+
+
+MINIKUBE:
+It is a tool used to setup single node cluster on K8's. 
+Here Master and worker runs on same server.
+It contains API Servers, ETDC database and container runtime
+It is used for development, testing, and experimentation purposes on local. 
+It is a platform Independent.
+Installing Minikube is simple compared to other tools.
+
+NOTE: But we don't implement this in real-time Prod
+
+REQUIREMENTS:
+
+2 CPUs or more
+2GB of free memory
+20GB of free disk space
+Internet connection
+Container or virtual machine manager, such as: Docker.
+
+Kubectl is the command line tool for k8s
+if we want to execute commands we need to use kubectl.
+
+SETUP:
+sudo apt update -y
+sudo apt upgrade -y
+sudo apt install curl wget apt-transport-https -y
+sudo curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+sudo chmod +x /usr/local/bin/minikube
+sudo minikube version
+sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+sudo echo "$(cat kubectl.sha256) kubectl"   sha256sum --check
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+sudo minikube start --driver=docker --force
+
+NOTE: When you download a command as binary file it need to be on /usr/local/bin 
+because all the commands in linux will be on /usr/local/bin 
+and need to give executable permission for that binary file to work as a  command.
+
+
+
+POD:
+It is a smallest unit of deployment in K8's.
+It is a group of containers.
+Pods are ephemeral (short living objects)
+Mostly we can use single container inside a pod but if we required, we can create multiple containers inside a same pod.
+when we create a pod, containers inside pods can share the same network namespace, and can share the same storage volumes .
+While creating pod, we must specify the image, along with any necessary configuration and resource limits.
+K8's cannot communicate with containers, they can communicate with only pods.
+ We can create this pod in two ways, 
+1. Imperative(command) 
+2. Declarative (Manifest file)
+
+
+IMPERATIVE:
+
+kubectl run pod1 --image nginx
+kubectl get pods/pod/po
+kubectl get pod -o wide
+kubectl describe pod pod1
+kubectl delete pod pod1
+
+DECRALATIVE: by using file called manifest file
+
+MANDATORY FEILDS: without these feilds we cant create manifest
+
+apiVersion:
+kind:
+metadata:
+spec:
+
+
+vim pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+spec:
+  containers:
+    - image: vinodvanama/paytmtrain:latest
+      name: cont1
+
+execution: 
+kubectl create -f pod.yml
+kubectl get pods/pod/po
+kubectl get pod -o wide
+kubectl describe pod pod1
+kubectl delete -f raham.yml
+
+DRAWBACK: once pod is deleted we can't retrieve the pod.
+
+TIP: GENERATING MANIFEST FILE FOR EXISTING K8S OBJECTS
+kubectl get po 
+kubectl get po pod1 -o yaml 
+kubectl get po pod1 -o yaml > abc.yml
+
+TROBLESHOOT: 
+ERROR: ErrImagePull
+SOL  : DELETE THE POD AND CREATE WITH PROPER IMAGE NAME
+
+
+==========================================================================
+LABELS:
+Labels are key-value pairs that are attached to pods, RC and services. 
+They can be added or modified at the during creation or run time.
+Rc manages pods based on labels only.
+kubectl run pod-1 --image=nginx  --labels="env=dev, app=swiggy"
+kubectl get pods --show-labels
+
+
+SELECTOR:
+Selector filter the Pods with same labels.
+There are two kinds of selectors: Equality based and Set base
+
+
+REPLICASET:
+
+It will create multiple replicas of same Pod.
+If One Pod deleted it will automatically create new Pod.
+All the pods will have same config. (from Template)
+We can do Auto Scaling and Load Balancing Through ReplicaSet.
+In Background Replication Controller  will be Responsible to create Replicas.
+ReplicaSets will use Labels and Selectors to identify Pods.
+Replication Controller is Older Version and ReplicaSet is New Version.
+
+CODE:
+
+vim replicaset.yml
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: rahashaik/movies:latest
+
+COMANDS:
+TO CREATE              : kubectl create -f abc.yml      
+TO LIST                : kubectl get rs
+NODE INFO              : kubectl get pod -o wide
+COMPLETE INFO          : kubectl describe rs movies
+TO EDIT                : kubectl edit rs movies
+TO DELETE              : kubectl delete rs movies
+TO SCALE               : kubectl scale rs/movies --replicas=10 (LIFO)
+TO SHOW LABELS         : kubectl get pods -l app=Paytm
+
+we cant Rollin and rollout, we cant update the application in rs.
+v1 -- > v2
+v2 -- > v1
+
+deploy -- < rs -- > pods
+========================================================================================
+
+DEPLOYMENT:
+It has features of RS and some other extra features like updating and rollbacking to a particular version.
+The best part of Deployment is we can do it without downtime.
+Deployment will create ReplicaSet, ReplicaSet will created Pods.
+
+CODE:
+
+vim deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: rahamshaik/mynetflix:1.0
+
+
+
+COMMANDS:
+TO CREATE              : kubectl create -f abc.yml      
+TO LIST                : kubectl get rs
+NODE INFO              : kubectl get pod -o wide
+COMPLETE INFO          : kubectl describe rs movies
+TO EDIT                : kubectl edit deploy movies (line 36)
+
+
+NOTE: TO GET INFO OF  DEPLOYMENT TO FILE
+kubectl create deployment movies  --image=name  --replicas=4 --dry-run=client -o yaml > movies-deployment.yml
+
+ROLLOUT COMMANDS:
+kubectl rollout history deployment movies 	: to show deployment versions
+kubectl rollout status deployment movies 	: to show deployment status
+kubectl rollout undo deployment movies 		: to show rollback deployment 
+kubectl rollout pause deployment movies 	: to show pause deployment
+kubectl rollout resume deployment movies 	: to show unpause deployment 
+kubectl rollout undo deploy movies --to-revision=1 : rollout to version 1
+
+
+TO DELETE   les        : kubectl delete deploy movies
+TO SCALE               : kubectl scale deploy/movies --replicas=10 (LIFO)
+TO SHOW LABELS         : kubectl get pods -l app=Paytm
+IMPERATIVE             :kubectl create deploy movies --image=name --replicas=4
+
+
+https://k8sgen.computer/ : ai tool to generate manifest fi
+
+======================================================================================
+DAY-3: 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'sleep 1']
+
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 1000]
+
+kubectl create -f file.yml
+kubectl get po
+
+
+SIDE CAR:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: myapp
+          image: alpine:latest
+          command: ['sh', '-c', 'while true; do echo "logging" >> /opt/logs.txt; sleep 1; done']
+          volumeMounts:
+            - name: data
+              mountPath: /opt
+      initContainers:
+        - name: logshipper
+          image: alpine:latest
+          # Setting restartPolicy: Always makes this a sidecar container.
+          restartPolicy: Always
+          command: ['sh', '-c', 'tail -F /opt/logs.txt']
+          volumeMounts:
+            - name: data
+              mountPath: /opt
+      volumes:
+        - name: data
+          emptyDir: {}
+
+kubectl create -f file.yml
+kubectl get po
+kubectl logs myapp-68bdc564bb-7v5pg -c logshipper
+
+
+JOBS:
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        command: ['sh', '-c', 'echo db backup completed']
+      restartPolicy: Never
+  backoffLimit: 4
+
+kubectl create -f file.yml
+kubectl get job
+kubectl get po
+kubectl logs your-pod-name
+
+CRONJOB:
+
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+
+
+kubectl create -f file.yml
+kubectl get cronjob
+kubectl get po
+kubectl logs your-pod-name
+
+================================================================================
+MINIKUBE ALTERNATIVES:
+KUBEADM, KOPS, KIND, RANCHER, EKS, AKS, GKE, KIND9
+
+KOPS:
+INFRASTRUCTURE: Resources used to run our application on cloud.
+EX: Ec2, VPC, ALB, ASG-------------
+
+
+Minikube -- > single node cluster
+All the pods on single node 
+if that node got deleted then all pods will be gone.
+
+KOPS:
+kOps, also known as Kubernetes operations.
+it is an free, open-source and Platform Independent tool.
+used to create, destroy, upgrade, and maintain a highly available, production-grade Kubernetes cluster. 
+Depending on the requirement, kOps can also provide cloud infrastructure.
+
+ADVANTAGES:
+•	Automates the provisioning of AWS and GCE Kubernetes clusters
+•	Deploys highly available Kubernetes masters
+•	Supports rolling cluster updates
+•	Autocompletion of commands in the command line
+•	Generates Terraform and CloudFormation configurations
+•	Manages cluster add-ons.
+•	Supports state-sync model for dry-runs and automatic idempotency
+•	Creates instance groups to support heterogeneous clusters
+
+ALTERNATIVES:
+Amazon EKS , MINIKUBE, KUBEADM, RANCHER, TERRAFORM.
+
+
+STEP-0: CREATE EC2 AND S3 BUCKET ON SAME REGION (bucket name: -----------.k8s.local)
+
+STEP-1: INSTALL CLI & GIVING PERMISSIONS (IAM)
+
+KOps Is a third party tool if it want to create infrastructure on aws 
+aws need to give permission for it so we can use IAM user to allocate permission for the kops tool
+
+IAM -- > USER -- > CREATE USER -- > NAME: KOPS -- > Attach Polocies Directly -- > AdministratorAccess -- > NEXT -- > CREATE USER
+USER -- > SECURTITY CREDENTIALS -- > CREATE ACCESS KEYS -- > CLI -- > CHECKBOX -- >  CREATE ACCESS KEYS -- > DOWNLOAD 
+
+GIVING THE KEYS
+
+#! /bin/bash
+aws configure
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+wget https://github.com/kubernetes/kops/releases/download/v1.33.0/kops-linux-amd64
+chmod +x kops-linux-amd64 kubectl
+mv kubectl /usr/local/bin/kubectl
+mv kops-linux-amd64 /usr/local/bin/kops
+echo "export PATH=$PATH:/usr/local/bin/" >> source .bashrc
+
+export KOPS_STATE_STORE=s3://cloudanddevopsbyraham0073456.k8s.local
+kops create cluster --name rahamss.k8s.local --zones ap-south-1a --control-plane-image ami-02b8269d5e85954ef  --control-plane-count=1 --control-plane-size c7i-flex.large --image ami-02b8269d5e85954ef  --node-count=2 --node-size c7i-flex.large
+kops update cluster --name rahamss.k8s.local --yes --admin
+
+
+
+
+kops update cluster --name rahamss.k8s.local --yes --admin
+
+kops validate cluster --wait 10m
+
+Suggestions:
+ * list clusters with: kops get cluster
+ * edit this cluster with: kops edit cluster rahams.k8s.local
+ * edit your node instance group: kops edit ig --name=rahams.k8s.local nodes-us-east-1a
+ * edit your master instance group: kops edit ig --name=rahams.k8s.local master-us-east-1a
+
+ERROR:
+Error: State Store: Required value: Please set the --state flag or exp                  
+SOL: export KOPS_STATE_STORE=s3://rahamsdevopsbatchmay14102024am.k8s.local
+
+NOTE: TO GET INFO OF  DEPLOYMENT TO FILE
+kubectl create deployment movies  --image=name  --replicas=4 --dry-run=client -o yaml > movies-deployment.yml
+
+ADMIN ACTIVITIES:
+To scale the worker nodes:
+kops edit ig --name=rahams.k8s.local nodes-us-east-1a
+kops update cluster --name rahams.k8s.local --yes --admin 
+kops rolling-update cluster --yes
+
+ADMIN ACTIVITIES:
+kops edit ig --name=rahams.k8s.local master-us-east-1a
+kops update cluster --name rahams.k8s.local --yes
+kops rolling-update cluster
+
+SCALING IN GUI: ASG -- > MASTER/WORKER NODE -- > EDIT -- > DESIRED: 4 -- > SAVE
+
+NOTE: In real time we use five node cluster two master nodes and three worker nodes.
+
+NOTE: its My humble request for all of you not to delete the cluster manually and do not delete any server use the below command to delete the cluster.
+
+TO DELETE: kops delete cluster --name rahams.k8s.local --yes
+=======================================================================================================
+
+
+
+SERVICE: 
+Used to expose Pods to the users.
+If Front end Pod need to communicate with backend pod we use service for it.
+
+COMMAND: kubectl api-resources
+
+TYPES:
+CLUSTER-IP
+NODE PORT
+LOAD BALANCER
+
+COMPONENTS OF SERVICES:
+Selector: To select pods
+Port: Associated to Service
+TargetPort: Associated to Pod
+nodePort: Associated to Node
+Type: Type of the service
+
+
+TYPES:
+1. CLUSTERIP: It will work inside the cluster.
+it will not expose to outer world.
+Ideal for internal communication within a cluster.
+Suitable for backend services like databases, caches, or internal APIs 
+Preferred in Development and Testing Envs.
+Not accessible from outside the cluster.
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: movies
+  name: movies-deploy
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/moviespaytm:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: ClusterIP
+  selector:
+    app: movies
+  ports:
+    - port: 80
+
+DRAWBACK:
+We cannot use app outside.
+
+2. NODEPORT: 
+
+Node Port Range= 30000 - 32767
+NodePort expose Pod on a static port on each node.
+if Port is not given it will assign automatically.
+if target Port is not Given it takes Port value.
+NodePort services are typically used for smaller applications with a lower traffic volume.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: movies
+  name: movies-deploy
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/moviespaytm:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: NodePort
+  selector:
+    app: movies
+  ports:
+    - port: 80
+      nodePort: 31111
+
+
+NOTE: UPDATE THE SG (REMOVE OLD TRAFFIC AND GIVE ALL TRAFFIC)
+DRAWBACK:
+EXPOSING PUBLIC-IP & PORT 
+PORT RESTRICTION.
+
+3. LOADBALACER: 
+In LoadBalaner we can expose application externally with the help of Cloud Provider LoadBalancer.
+it is used when an application needs to handle high traffic loads and requires automatic scaling and load balancing capabilities.
+After the LoadBalancer service is created, the cloud provider will created the Load Balancer.
+REPLACE  NodePort with LoadBalancer
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: swiggy
+  name: swiggy-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/trainservice:latest
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abc
+spec:
+  type: LoadBalancer
+  selector:
+    app: swiggy
+  ports:
+    - port: 80
+
+======================================================================================
+
+
+
+
+NAMESPACE: 
+
+It is used to divide the cluster to multiple teams on real time.
+Used for isolating groups of resources within cluster.
+By Default we work on Default Name space in K8's.
+We create NameSpaces when we work for Prod level Workloads.
+If we create pod on one namespace it cant be access by other namespaces.
+We can set access limits by RBAC and Limits of Cpu, RAM by Quotas.
+It is  applicable only for namespaced objects (e.g. Deployments, Services, etc.)
+It wont apply for cluster-wide objects (e.g. StorageClass, Nodes, PV).
+
+
+CLUSTER: HOUSE
+NAMESPACES: ROOM
+TEAM MATES: FAMILY MEM
+
+Each namespace is isolated.
+if your are room-1 are you able to see room-2.
+If dev team create a pod on dev ns testing team cant able to access it.
+we cant access the objects from one namespace to another namespace By Default.
+
+
+TYPES:
+
+default           : Is the default namespace, all objects will create here only
+kube-node-lease   : it will store object which is taken from one node to another.
+kube-public	  : all the public objects will store here.      
+kube-system 	  : default k8s will create some objects, those are storing on this ns.
+
+NOTE: Every component of Kubernetes cluster is going to create in the form of pod
+And all these pods are going to store on kUBE-SYSTEM ns.
+
+kubectl get pod -n kube-system	: to list all pods in kube-system namespace
+kubectl get pod -n default	: to list all pods in default namespace
+kubectl get pod -n kube-public	: to list all pods in kube-public namespace
+kubectl get po -A		: to list all pods in all namespaces
+kubectl get po --all-namespaces
+
+kubectl create ns dev	: to create namespace
+kubectl config set-context --current --namespace=dev : to switch to the namespace
+kubectl config view : to see current namespace
+kubectl run dev1 --image nginx
+kubectl run dev2 --image nginx
+kubectl run dev3 --image nginx
+kubectl get po 
+kubectl create ns test	: to create namespace
+kubectl config set-context --current --namespace=test : to switch to the namespace
+kubectl config view --minify   grep namespace : to see current namespace
+kubectl get po -n dev
+kubectl delete pod dev1 -n dev
+kubectl delete ns dev	: to delete namespace
+kubectl delete pod --all: to delete all pods
+
+NOTE: BY DEFAULT K8S NAMESPACE WILL PROVIDE ISOLATION BUT NOT RESTRICTION.
+TO RESTRICT THE USER TO ACCESS A NAMESPACE IN REAL TIME WE USE RBAC.
+WE CREATE USER, WE GIVE ROLES AND ATTACH ROLE.
+
+alias switch="kubectl config set-context --current"
+switch --namespace=default
+switch --namespace=dev
+
+====================================================================================
+
+DAY-5: MERTIC SERVER, DAEMONSET, NODE SCALING, POD SCALING, KUBECOLOR
+
+METRIC SERVER INSTALLATION:
+
+minikube addons list
+minikube addons enable metrics-server
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+kubectl top nodes
+kubectl top pods
+
+Metrics Server offers:
+
+METRIC SERVER: Metrics of pods/nodes (cpu, ram, disk ---)
+its not a built in feature in k8s (HEAPSTER)
+we install metric server in all the nodes
+it creates like a pod -- > (DaemonSet)
+Req: 1 millcore , 2 Mb Ram
+it collects metrics for every 15 sec
+Scalable support up to 5,000 node clusters.
+
+
+You can use Metrics Server for:
+CPU/Memory based horizontal autoscaling (Horizontal Autoscaling)
+Automatically adjusting/suggesting resources needed by containers (Vertical Autoscaling)
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+
+
+kubectl apply -f dep.yml
+kubectl get all
+kubectl get deploy 
+kubectl autoscale deployment movies --cpu=20 --min=3 --max=10 --dry-run=client -o yaml > hpa.yml
+kubectl create -f hpa.yml
+kubectl get hpa
+kubectl desribe hpa movies
+kubectl get al1
+
+open second termina and give
+kubectl get po --watch
+
+come to first terminal and go inside pod
+kubectl exec mydeploy-6bd88977d5-7s6t8 -it -- /bin/bash
+
+apt update && apt install stress -y && stress -c 10
+
+check terminal two to see live pods
+
+
+
+behavior:
+  scaleDown:
+    stabilizationWindowSeconds: 300
+
+
+behavior:
+  scaleDown:
+    policies:
+    - type: Pods
+      value: 4
+      periodSeconds: 60
+    - type: Percent
+      value: 10
+      periodSeconds: 60
+
+
+
+INSTALLING VPA:
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/vpa-release-1.0/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/vpa-release-1.0/vertical-pod-autoscaler/deploy/vpa-rbac.yaml
+
+
+CODE:
+
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: movies-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: movies
+  updatePolicy:
+    updateMode: "Recreate"
+
+
+KUBECOLOR: USED TO ADD COLOR TO TERMINAL
+
+wget https://github.com/hidetatz/kubecolor/releases/download/v0.0.25/kubecolor_0.0.25_Linux_x86_64.tar.gz
+tar -zxvf kubecolor_0.0.25_Linux_x86_64.tar.gz
+./kubecolor
+chmod +x kubecolor
+mv kubecolor /usr/local/bin/
+kubecolor get po
+
+
+DAEMON-SET:
+
+used to create Only one pod on each workernode.
+Its the old version of Deployment.
+if we create a new node a pod will be automatically created.
+if we delete a old node a pod will be automatically removed.
+daemonsets will not be removed at any case in real time.
+Kube-Proxy is Deployed as a DaemonSet in all Nodes.
+DeamonSet uses NodeAffinity and Default Scheduler to Place Pods.
+USECASES: we can create pods for Logging, Monitoring of nodes.
+COMMAND: kubectl get ds
+
+
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+
+
+=================================================================================================================
+
+CSI:
+CSI stands for container storage interface.
+It provides an interface for integrating storage systems with Kubernetes
+Before CSI, Kubernetes had a limited set of built-in storage options.
+CSI was Developed to Support Multiple Storage Options in K8s.
+After CSI any one can Write Drivers for Own Storage.
+What ever K8s instructed our Storage Drivers need to Do it.
+Below storage Solutions we can use for k8s from Cloud Services.
+
+VOLUMES IN K8S:
+1. EMPTYDIR: 
+Its a empty Volume and exists as long as the pod exists.
+Data in an emptyDir volume is lost when the pod is deleted.
+
+2. HostPath: 
+its  a volume type where data is store in particular path of node.
+If the pod is deleted, the volume will remain on the host.
+but data will store on single node only
+
+3. Persistent Volume & Persistent Volume Claim: 
+PV represents an actual storage resource in the cluster.
+PVC is a request for storage by a user or a pod.
+
+PV & PVC:
+PV its a cluster wide Group of volumes created by Admin.
+User Can select volumes from the Group as per Requirements.
+If user want to use Volume he need to create Persistent Volume Claim.
+Once PVC is Created k8s will Bind PV based on request and Properties.
+To Bound Specific PVC to PV use Labels and Selector.
+Each PVC is Bound to only One PV, even if we have Additional storage. 
+If we create PVC and No PV is available so PVC will be on Pending state.
+
+RESTRICTIONS:
+1. Instances must be on same az as the ebs 
+2. EBS supports only a sinlge EC2 instance mounting
+
+pv.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    volumeID: vol-04e624118b7aa6835
+    fsType: ext4
+
+
+pvc.yml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+
+dep.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+     app: swiggy
+  template:
+    metadata:
+      labels:
+        app: swiggy
+    spec:
+      containers:
+      - name: raham
+        image: ubuntu:rolling
+        command: ["/bin/bash", "-c", "sleep 10000"]
+        volumeMounts:
+        - name: my-pv
+          mountPath: "/tmp/abc"
+      volumes:
+        - name: my-pv
+          persistentVolumeClaim:
+            claimName: my-pvc
+
+kubectl exec pvdeploy-86c99cf54d-d8rj4 -it -- /bin/bash
+cd /tmp/abc/
+touch file{1..5}
+ls
+vim file1 -- > write some data now 
+exit
+
+now delete the pod and new pod will created then in that pod you will see the same content.
+
+RECLAIM POLICY:
+Reclaim Policy tell what happens to a PV once PVC Deleted.
+RETAIN: PV will Available, but not Reuseable by any PVC. [Devadas-Paru]
+RECYCLE: PV will be available But Data will be deleted. [Bharath-sandhya]
+DELETE: PV will be Deleted Automatically. [Ramcharan-Kajol]
+
+
+ACCESS MODES:
+RWO: single node mount the volume as read-write at a time.
+ROX: multiple nodes mount the volume as read-only simultaneously.
+RWX: multiple nodes mount the volume as read-write simultaneously.
+RWOP: volume to be mounted as read-write by a single pod.
+
+STORAGE CLASSES:
+In PV & PVC storage is Created and increased Manually. 
+Storage Classses will automatically Provisions the storage to Pods.
+This is Called as Dynamic Provisioning.
+By using SC no need to Maintain PV.
+
+vim sc.yml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+
+
+kubectl create -f sc.yml
+kubectl get sc
+
+EXTRACTING MANIFEST FROM EXSTING OBJECTS:
+
+kubectl run pod1 --mage nginx
+kubectl get po pod1 -o yaml > pod.yml
+===========================================================================
+ENV VARS:
+In k8s we can set env vars using evn feild.
+env is array means we can set multiple values.
+it has key-value fromat.
+to set env vars we use configmaps and secrets.
+
+
+CONFIG MAPS:
+it is used to pass  configuration data to pods in key-value fromat.
+we pod is created inject configmap, so data is used as env varibles.
+First create configmap and later inject to pod.
+But the data should be non confidential data ()
+But it does not provider security and encryption.
+Limit of config map data in only 1 MB (for more data use volumes).
+To pass values from cli use literal.
+
+COMMAND:
+kubectl create cm dbcreds --from-literal=password=raham123 
+
+kubectl get cm
+kubectl describe cm dbcreds
+kubectl describe cm dbcreds
+
+
+kubectl create cm dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > cm.yml
+kubectl create -f cm.yml 
+
+kubectl get cm 
+
+CODES:
+
+cat config.yml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbcreds
+data:
+  user: "raham"
+  password: "test123"
+
+cat pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-configmap
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - configMapRef:
+            name: dbcreds
+
+
+
+kubectl get po
+kubectl exec -it env-configmap -- /bin/bash 
+
+root@env-configmap:/# echo $user
+raham
+root@env-configmap:/# echo $password
+test123
+
+
+SECERETS:
+Used to store sensitive information like passwords, keys ---
+it wont encrypt data but it will encode them in base64.
+when pod is created inject Secret.
+Dont push to github becuse they are not encrypted but encode.
+it wont encrypt in etcd also.
+Data feild indicates number of secrets in secret.
+USE BELOW COMMAND TO ENCODE: echo -n "raham123"   base64
+SE BELOW COMMAND TO DECODE: echo -n "raham123"    base64 -d
+
+COMMAND:
+kubectl create secret generic dbcreds --from-literal=user=raham  --from-literal=password=raham123
+kubectl get secret raham -o yaml
+kubectl describe secret dbcreds
+kubectl delete secret dbcreds
+
+
+kubectl create secret generic dbcreds --from-literal=user=raham --from-literal=password=test123 --dry-run=client -o yaml > secrets.yml
+
+kubectl create -f secrets.yml
+
+cat secret.yml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbcreds
+data:
+  user: "cmFoYW0="
+  password: "dGVzdDEyMw=="
+
+
+cat pod1.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-secret
+spec:
+  containers:
+    - name: app
+      image: nginx
+      envFrom:
+        - secretRef:
+            name: dbcreds
+
+kubectl create -f pod1.yml
+
+
+kubectl get po
+kubectl exec -it env-secret -- /bin/bash 
+
+root@env-configmap:/# echo $user
+raham
+root@env-configmap:/# echo $password
+test123
+
+
+
+NOTE:
+Dont push to github becuse they are not encrypted but encode.
+it wont encrypt in etcd also.
+Enable Encryption at Rest for Secrets so they stored as encrypted in ETCD
+secret is not written to disk storage, Kubelet stores them to tmpfs.
+Once the Pod that depends on the secret is deleted, kubelet will delete its local copy of the secret data as well.
+
+kubectl create deploy swiggydb --image=mariadb
+kubectl get pods
+kubectl logs swiggydb-5d49dc56-cbbqk
+
+It is crashed why because we havent specified the password for it
+
+
+kubectl set env deploy swiggydb MYSQL_ROOT_PASSWORD=Raham123 
+kubectl get pods
+now it will be on running state
+kubectl delete deploy swiggydb
+
+
+MULTI-CONTAINER POD:
+It will have more than one container in a pod.
+each container have different purpose to work on.
+They created and destroyed together and share same n/w and volume.
+If any of them fails, the POD restarts.
+
+SIDE CAR:
+It creates a helper container to main container.
+main container will have the app and helper container Helps main container.
+
+Init Container:
+it initialize the first work and exits later.
+
+Ambassador Design Pattern:
+used to connect containers with the outside world
+
+Adapter Design Pattern:
+enable communication and coordination between containers.
+
+
+CODE:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: cont1
+    image: nginx:1.14.2
+  - name: cont2
+    image: nginx:1.18
+
+
+CHECKING LOGS FOR MULTI CONTAINER PODS:
+
+kubectl logs nginx -c cont1
+kubectl logs nginx -c cont2
+
+===================================================================================
+
+STEP-1: CREATE 2 SERVER (1 MASTER & 1 WORKER) (STEP 1 TO STEP 6 COMMON FOR ALL NODES)
+
+STEP-2: UPDATE 
+sudo apt update -y && sudo apt upgrade -y
+
+STEP-3: Then import GPG key and configure APT repository.
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key   sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /'   sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+
+STEP-4: INSTALL KUBECTL, KUBELET, KUBEADM
+(KUBECTL   : to communicate with k8s)
+(KUBELET   : to create pods)
+(KUBEADM   : to create cluster)
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+kubeadm version
+
+STEP-5: INSTALL CONTAINER RUNTIME  (to create containers)
+
+sudo apt-get update
+sudo apt install containerd -y
+
+STEP-6: 
+
+Cgroup drivers (short for Control Group drivers) are components of the Linux kernel that manage how system resources (like CPU, memory, disk I/O, etc.) are allocated to containers/process.
+
+mkdir -p /etc/containerd
+containerd config default
+containerd config default  >> /etc/containerd/config.toml
+change line 139 false to true
+sed -i '139s/false/true/' /etc/containerd/config.toml
+systemctl restart containerd.service
+systemctl status containerd.service
+echo "1" >> /proc/sys/net/ipv4/ip_forward (0=no connetion to servers) (1=connect to other servers)
+
+STEP-7: CREATE CLUSTER WITH KUBEADM (RUN COMMAND ON MASTER NODE)
+
+kubeadm init  --apiserver-advertise-address 172.31.28.87 --pod-network-cidr "10.0.0.0/16" --upload-certs --ignore-preflight-errors=all
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl get no
+
+GIVE THIS TOKEN ON ALL WORKER NODES:
+
+kubeadm join 172.31.24.115:6443 --token shns2s.akxuwrq6yvo43u6o \
+        --discovery-token-ca-cert-hash sha256:647e837c76c8c2eeac4ddd82ac9e2c8ea93679d81e44d697c65fa4b84d8a2da0 --ignore-preflight-errors=all
+                            
+kubectl get no
+
+STEP-8: DEPLOY A NETWORK PLUGIN (WEAVENET)
+GO TO ADDONS PAGE IN K8S DOCS AND FIND IT
+
+kubectl apply -f https://reweave.azurewebsites.net/k8s/v1.29/net.yaml
+
+
+STEP-9: COPY PASTE TOKEN ON WORKER NODE
+kubeadm join 172.31.27.84:6443 --token u97a1o.2e46o337yico1pov \
+        --discovery-token-ca-cert-hash sha256:2206382552dff3b58277a4010ad96657d3b2bba4ceae221e0f048fcbeae5c310
+
+STEP-10: RUN A POD
+kubectl run pod1 --image nginx
+kubectl get po
+
+
+========================================================================================
+
+CLUSTER UPGRADING:
+REF: https://v1-31.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"   sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key   sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+
+sudo apt update
+sudo apt-cache madison kubeadm
+
+
+sudo apt-mark unhold kubeadm && \
+sudo apt-get update && sudo apt-get install -y kubeadm='1.33.5-1.1' && \
+sudo apt-mark hold kubeadm
+
+
+kubeadm version
+kubeadm upgrade plan --ignore-preflight-errors=CreateJob
+kubeadm upgrade apply v1.31.4  --ignore-preflight-errors=CreateJob
+
+kubectl get no
+
+NOW UPDATE KUBELETE:
+STEP-1: MOVE THE EXISTING PODS
+kubectl drain <node-to-drain> --ignore-daemonsets
+
+
+sudo apt-mark unhold kubelet kubectl && \
+sudo apt-get update && sudo apt-get install -y kubelet='1.31.4-1.1' kubectl='1.31.4-1.1' && \
+sudo apt-mark hold kubelet kubectl
+
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+kubectl uncordon <node-to-uncordon>
+
+
+===============================================================================
+REASONS TO UPGRADE:
+1. PERFOMANCE IMPROVE
+2. BUGS WILL BE REMOVED
+3. NEW FEATURES
+
+DRAIN:  marking node as unschedulable and move the pods from one node to another
+UNCORDON: Marking the node as to schedule the new pods.
+
+TAKE AWAYS:
+1. WHILE UPGRADING K8S VERSION WE CAN UPGRADE ONE VERSION AT A TIME
+1.30 ---- > 1.34 (NOT POSSIBLE)
+1.30 ---- > 1.31  --- > 1.32 --- > 1.33 --- > 1.34 (POSSIBLE)
+
+2. ALL K8S COMPONENTS (KUBEADM, KUBECTL, KUBELET) NEED NOT HAVE SAME VERSION
+
+3. TYPES OF STRATAGIES (ALL AT ONCE, ROLLING UPDATE, BLUE-GREEN)
+
+KEPS:
+STEERING COMMUNITY
+IMPLEMNET
+RELEASE
+FEATURE
+
+
+===========================================================
+
+KOPS                  KUBEADM
+SERVER                SERVER
+NO KEYS               KEYS
+NO REP                REPO IS MANDATORY
+NO KUBELET            KUBELET IS REQ
+NO CONTAINER RUNTIME  CONTAINER RUN TIME IS REQ
+NO CGROUP             CGROUP
+NO IPV4 FORWARD       IPV4 FORWARD
+NO TOKEN              TOKEN
+NO CNI                CNI
+
+
+
+
+
+
+========================================================================================================
+
+
+BEST EXAMPLE: PET DOG LOYALITY
+
+SCHEDULER:
+Scheduler main work is to select the node to place the pod.
+while a pod is created it will select a node based on pod requirment.
+if scheduler cant find node then pod will be on pending state.
+Initially we can place a pod on node by writing node name on manifest.
+scheduler runs as a pod if it stop/delete scheduling wont happen.
+
+
+
+
+TAINTS & TOLERATIONS:
+By Default scheduler can place any pod on any Node.
+if we want to place Pod-1 on  Node-1 then we use Taints & Tolerations.
+First we taint the Node-01 so that no pod will be placed on any node.
+Then we can tolerate the Particular pod what we want to place on Node-01.
+We set Taint for Nodes & Tolerations for Pods.
+EX: Kubectl taint node01 app=paytm:NoSchedule
+NOTE: it wont guarantee that  pod-1 definitely place on Node-01 all the time
+By Default k8s master is tainted thats why no pod is placed on master.
+To schedule pod on a master add - at end by running taint command.
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: nginx
+      tolerations:
+        - key: "dog"
+          operator: "Equal"
+          value: "pitbull"
+          effect: "NoSchedule"
+
+kubectl taint node i-04a90983debd1c8ec dog=pitbull:NoSchedule
+
+NODE SELECTOR:
+Kubernetes can select nodes to place pods based on the labels of a node.
+First we can label the node & later same labels we can add to pod manifest.
+Now all pods will be set on same node.
+NOTE: It can place pod on node with single label, But if we want to place pod on a node with multiple lables this wont work.
+kubectl label node node_id key=value
+
+kubectl label nodes node-1 meat=mutton
+
+
+NOTE: UNTAINT THE NODE
+kubectl taint node node_id app=swiggy:NoSchedule-
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: paytm
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+        - name: cont1
+          image: nginx
+      nodeSelector:
+        meat: "mutton"
+
+
+NOTE: IF NODE IS HAVING ANY TAINTS THE PODS WILL NOT SCHEDULE
+kubectl taint node i-06c09c90c2768ceba app=swiggy:NoSchedule-
+
+kubcetl create -f dep.yml
+
+TO REMOVE LABEL: kubectl label node i-0b17bfc7885c1c9f3 hero=diwakar --overwrite
+
+
+
+NODE AFFINITY:
+its a feature in Kubernetes that facilitates us to specify the rules for scheduling the pod based on the node labels. 
+we can use operators with multiple values too.
+OPERATORS: [In, NotIn, Exists, DoesNotExist, Gt, Lt]
+TYPES:
+requiredDuringSchedulingIgnoredDuringExecution:  While scheduling matching the label is mandatory, after placing pod optional.
+
+PreferredDuringSchedulingIgnoredDuringExecution: While scheduling matching the label is not mandatory, after placing pod optional.
+
+
+kubectl label node node-1-id meat=mutton  (node-1)
+kubectl label node node-2-id meat=fish    (node-2)
+
+GIVE LABELS AND TRY THIS 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: paytm
+  template:
+    metadata:
+      labels:
+        app: paytm
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: meat
+                operator: In
+                values:
+                - chicken
+                - mutton
+
+POD AFFINITY    : PLACES POD-2 ON WHERE POD-1 IS PLACED
+POD ANTI AFFINIT: PLACES POD-2 ON WHERE POD-1 IS NOT PLACED
+
+
+
+RESOURCE QUOTAS:
+
+Scheduler checks the  CPU, RAM of node before we Place a Pod
+If Node CPU, RAM is not matching for Pod, it select another Node in Cluster.
+If any node is not having Sufficient CPU, RAM then pod will go Pending state.
+Without limits a container in pod can consume all CPU, RAM of Node.
+So we need to set limits in Real time to restrict the Containers.
+Note: Limits are set in container level, if we have 2 containers in a pod then set values individually.
+A container cant use more Cpu’s than Specified limit, But Not Memory.
+Pod will be terminated when it use more than limits and we get OOM error.
+To set limits and Request we use Quotas and Limit Ranges in Real time.
+LimitRange applies to individual containers or pods.
+ResourceQuota applies to the entire namespace.
+
+
+kubectl create ns dev
+kubectl config set-context --current --namespace=dev
+
+
+cat dev-quota.yml
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-quota
+  namespace: dev
+spec:
+  hard:
+    pods: "10"
+    limits.cpu: "1"
+    limits.memory: 1Gi
+
+
+cat dep.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    app: movies
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: movies
+  template:
+    metadata:
+      labels:
+        app: movies
+    spec:
+      containers:
+        - name: cont1
+          image: yashuyadav6339/movies:latest
+          resources:
+            limits:
+              cpu: "0.1"
+              memory: 100Mi
+       
+
+kubectl get events 
+kubectl get events --field-selector type=Warning
+kubectl get events --field-selector type=Warning --sort-by='.lastTimestamp'
+
+
+
+STATIC POD:
+
+Kubelet Create Pods without API Server is called as Static Pods.
+we put Pod manifest in /etc/kubernetes/manifests [on worker node]
+Kubelet Read files and Create Pods and Manages it.
+If we made any change to Manifest File Kubelet Recreates the Pod.
+If we remove file then  pod will be deleted automatically.
+We can change path of location in kubelet.service file.
+ use [ --config=abc.yml ] and in abc.yml [ staticPodPath: /etc/xyz]
+Even if we create Pod from Kubelet API Server knows about that Pod.
+Because API will have a Read only Mirror of a Pod but cant edit and delete.
+Kubelet can create static and dynamic pods at a same time.
+USE CASES: used to Deploy control-plane components as a pods in Master.
+NOTE: RS, DEPLOYMENT cant create because they required Controllers.
+
+
+PRACTICAL:
+cd /etc/kubernetes/manifests [Run this on Worker node]
+Create a manifest file and run it.
+Go to Kops server and Check
+
+HOW TO CHANGE STATIC POD PATH:
+vim /var/lib/kubelet/config.yaml
+staticPodPath: /root
+systemctl restart kubelet.service
+
+kubectl run pod2 --image nginx --dry-run=client -o yaml > pod2.yml
+kubectl get po
+
+
+POD PRIORITY CLASSES:
+
+Pods can have priority. Priority indicates the importance of a Pod relative to other Pods. If a Pod cannot be scheduled, the scheduler tries to preempt (evict) lower priority Pods to make scheduling of the pending Pod possible.
+
+
+vim pc.yml
+
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000
+globalDefault: false
+description: "This priority class should be used for XYZ service pods only."
+
+
+vim pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  priorityClassName: high-priority
+
+
+
+=======================================================================================
+
+FILE TO CHECK FOR USER, CLUSTER, NAMESPACE DETAILS: /root/.kube/config
+RBAC:
+
+role : set of permissions for one ns
+role binding: adding users to role
+these will work on single namespace
+
+cluster role: set of permissions for entire Cluster
+cluster role binding: adding users to cluster role
+these will work on all namespaces
+
+
+when we run kubectl get po k8s api server will authenticate and check authorization
+authentication: permission to login
+authorization: permission to work on resources
+
+To authenticate API requests, k8s uses the following options:
+client certificates,
+bearer tokens,
+authenticating proxy,
+or HTTP basic auth.
+
+Kubernetes doesn’t have an API for creating users.
+Though, it can authenticate and authorize users.
+
+We will choose the client certificates as it is the simplest among the four options.
+
+why certs needed on k8s: for authentication purpose.
+certs will have users & keys for login.
+
+LINK: https://kubernetes.io/docs/tasks/administer-cluster/certificates/
+
+PRACTICAL PART:
+
+1. Create a client certificate
+We’ll be creating a key and certificate sign request (CSR) needed to create the certificate. Let’s create a directory where to save the certificates. I’ll call it cert:
+
+mkdir dev1 && cd dev1
+
+1. Generate a key using OpenSSL:  (admission)
+openssl genrsa -out dev1.key 2048    
+
+
+2. Generate a Client Sign Request (CSR) :  (learning)
+
+openssl req -new -key dev1.key -out dev1.csr -subj "/CN=dev1/O=group1"
+ls ~/.minikube/
+
+3. Generate the certificate (CRT):  (CCC)
+
+openssl x509 -req -in dev1.csr -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.key -CAcreateserial -out dev1.crt -days 500
+
+Now, that we have the .key and the .crt, we can create a user.
+
+
+
+Create a user
+1. Set a user entry in kubeconfig
+kubectl config set-credentials dev1 --client-certificate=dev1.crt --client-key=dev1.key
+
+2.Set a context entry in kubeconfig
+kubectl config set-context dev1 --cluster=minikube --user=dev1
+kubectl config view
+
+3.Switching to the created user
+kubectl config use-context dev1
+$ kubectl config current-context # check the current context
+dev1-context
+But, now, dev1 doesn’t have any access privileges to the cluster. For that we’ll have access denied if we try to create any resource:
+
+$ kubectl create namespace dev
+
+kubectl get po
+Error from server (Forbidden): namespaces is forbidden: User "dev1" cannot create resource "namespaces" in API group "" at the cluster scope
+
+3. Grant access to the user
+To give access to manage k8s resources to dev1, we need to create a Role and a BindingRole.
+
+kubectl config use-context minikube
+kubectl create ns dev
+
+
+
+3.1. Create a Role
+
+vim role.yml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev
+  name: dev-role
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"]
+  verbs: ["get", "create", "watch", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-rolebind
+  namespace: dev
+subjects:
+- kind: User
+  name: dev1
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: dev-role
+  apiGroup: rbac.authorization.k8s.io
+
+
+kubectl apply -f role.yml
+
+kubectl config use-context dev1-context
+kubectl config view   grep -i namespace
+kubectl config set-context --current --namespace=dev
+
+kubectl run pod1 --image nginx : work
+kubectl get po : work
+kubectl delete po pod1 : error -- > no permissions
+
+TO UPDATE PERMISSION GO TO MINIKUBE USER
+kubectl config use-context minikube
+
+ADD THIS IN FILE:
+verbs: ["get", "create", "watch", "list", "delete"]
+kubectl apply -f role.yml
+kubectl config use-context dev1-context
+kubectl delete po pod1 : work
+
+
+kubectl create deploy raham --image nginx --replicas 2
+kubectl create cm raham --from-literal=user=raham
+
+NOW UPATE ROLE WITH DEPLOYMEN AND CM
+
+kubectl config use-context minikube
+
+ADD THIS IN FILE:
+- apiGroups: ["*"] # 
+resources: ["pods", "deployments", "configmaps"]
+kubectl apply -f role.yml
+kubectl config use-context dev1-context
+
+
+
+BY DEFAULT API VERSION IN ROLE IS: v1 ("")
+SO TO WORK WITH ALL RESOURCES PUT *
+
+CLUSTER ROLE: GIVES PERMISSION TO WORK WITH ENTIRE CLUSTER
+
+vim clusterrole.yml
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dev-role
+rules:
+- apiGroups: ["*"] # "" indicates the core API group
+  resources: ["pods", "deployments", "configmaps", "namespaces"]
+  verbs: ["get", "create", "watch", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dev-rolebind
+subjects:
+- kind: User
+  name: dev1
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: dev-role
+  apiGroup: rbac.authorization.k8s.io
+
+
+kubectl create ns test
+kubectl config use-context dev1-context
+kubectl config view   grep -i namespace
+kubectl config set-context --current --namespace=dev
+
+
+
+SOME OBJECT IN K8S CREATE IN CLUSTER LEVEL SO WE NEED TO CREATE CLUSTERROLE AND CLUSTER ROLEBIND
+PV, PVC, NS
+
+
+CLI: BEST WAY TO WORK
+
+kubectl config set-context --current --namespace=dev
+kubectl create role -h
+kubectl create role devrole --verb=create,delete,list --resource=pods -n dev
+
+kubectl create rolebinding -h
+kubectl create rolebinding devrolebinding --role=dev --user=dev1 -n dev
+
+kubectl config use-context dev1
+kubectl config set-context --current --namespace=dev
+kubectl run pod1 --image nginx  #sucess
+kubectl delete po pod1 #fail
+
+because we have given permission for only create and list
+
+kubectl config use-context minikube
+
+modify th devrole file
+kubectl apply -f devrole.yml
+
+EXAMPLE:  kubectl get deploy raham -n test -o yaml > dep.yml
+
+
+CLUTSTER-ROLE: IT WORKS WITH MULTIPLE NAMESPACES
+kubectl create clusterrole dev-clusterrole --verb=create,list  --resource=pods --dry-run=client -o yaml > clusterrole.yml
+kubectl create -f clusterrole.yml
+
+
+kubectl create clusterrolebinding dev-clusterrolebinding --clusterrole=dev-clusterrole --user=dev1 --dry-run=client -o yaml > dev-clusterrolebinding.yml
+kubectl create -f dev-clusterrolebinding.yml
+
+VERIFY:
+kubectl config use-context dev1-context
+kubectl get po
+kubectl get po
+
+
+
+KUBECTL AUTH: TO CHECK PERMISSIONS:
+
+kubectl auth can-i get pods --user=dev1 -n dev
+kubectl auth can-i get pv --user=dev1
+kubectl auth can-i get deploy --user=dev1
+
+===================================================================================================================================
+
+ASSIGNMENTS: CREATE ON CLI COMMANDS AND EXTRAC TO FILE AFTER CREATING THEM
+CREATE A POD WITH NGINX IMAGE AND LABEL CALL APP=SWIGGY -- > EXTRACT TO FILE POD.YML
+CREATE A DEPLOY WITH BUSYBOX IMAGE AND LABEL CALL APP=ZOMATO --REPLICAS 5 -- > EXTRACT TO FILE DEP.YML
+CREATE A CM RAHAM APP=UBER ON TEST NS -- >  EXTRACT TO FILE CM.YML
+CREATE A SECRETS RAHAM APP=OLA ON TEST NS -- >  EXTRACT TO FILE SECRET.YML
+CREATE ROLE AND ROLEBIND IN DEV NS -- > EXTRACT TO FILE ROLE.YML
+CREATE CLUSTERROLE AND CLUSTERROLEBIND  -- > EXTRACT TO FILE CLUSTERROLE.YML
+
+A Service Account is a special type of account used by applications, scripts, or services to interact with APIs, cloud services, or other systems without requiring user authentication. 
+Unlike user accounts, service accounts are not tied to a person and do not require manual login.
+
+Key Features of Service Accounts:
+Automated Authentication: Used for non-human access to resources.
+Access Control: Can be assigned specific permissions using roles.
+No Passwords: Uses keys or tokens for authentication.
+Security Focused: Designed to limit access and minimize security risks.
+
+Where Are Service Accounts Used?
+Cloud Platforms (e.g., AWS, Google Cloud, Azure) – To access cloud resources securely.
+CI/CD Pipelines – For automated deployments and integrations.
+API Access – To interact with third-party or internal APIs.
+Server-to-Server Communication – For microservices and backend operations.
+
+
+source <(kubectl completion bash) # set up autocomplete in bash into the current shell, bash-completion package should be installed first.
+echo "source <(kubectl completion bash)" >> ~/.bashrc # add autocomplete permanently to your bash shell.
+
+kubectl create ns prod
+
+vim sa.yml
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: prod
+
+kubectl create sa jenkins -n prod --dry-run=client -o yaml > sa.yml
+kubectl create -f sa.yml
+
+NOTE: TO WORK IN REAL TIME SA NEED TOKENS TO WORK WITH K8S CLUSTER
+
+THIS COMMAND WILL CREATE A ROLE FOR JENKINS SA:
+kubectl create role jenkinsrole --verb=create,delete,list  --resource=pods --namespace=prod --dry-run=client -o yaml > jenkinsrole.yml
+kubectl create -f jenkinsrole.yml
+
+THIS COMMAND WILL ATTACH ROLE FOR JENKINS SA:
+kubectl create rolebinding jenkinsrolebinding --role=jenkinsrole --serviceaccount=prod:jenkins --dry-run=client -o yaml  > jenkinsrolebinding.yml
+kubectl create -f jenkinsrolebinding.yml
+
+
+
+
+VERIFY:
+kubectl auth can-i list pods --as=system:serviceaccount:kube-system:jenkins
+no
+kubectl auth can-i create pods --as=system:serviceaccount:default:jenkins
+yes
+kubectl auth can-i delete pods --as=system:serviceaccount:default:jenkins
+yes
+kubectl auth can-i delete cm --as=system:serviceaccount:default:jenkins
+no
+
+
+
+WORK WITH GRAFAN:
+kubectl create ns grafana
+kubectl create sa Grafana
+kubectl create clusterrole grafanaclusterrole --verb=* --resource=pods,deployments
+
+kubectl create clusterrolebinding grafanaclusterrolebind1 --clusterrole=grafanaclusterrole --serviceaccount=grafana:grafana
+
+kubectl create clusterrolebinding grafanaclusterrolebind2 --clusterrole=grafanaclusterrole --serviceaccount=kube-system:grafana
+
+kubectl create clusterrolebinding grafanaclusterrolebind1 --clusterrole=grafanaclusterrole --serviceaccount=kube-public:grafana
+
+VERIFY:
+
+kubectl auth can-i list pods --as=system:serviceaccount:default:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-system:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-public:grafana
+yes
+kubectl auth can-i list pods --as=system:serviceaccount:kube-node-lease:grafana
+no
+
+PRIVATE REGISTRY CREDS:
+
+TOP REGISTRIES TO DOWNLOAD IMAGES:
+
+A. Major Cloud Provider Registries
+
+
+
+  Rank   Registry                    Best For              Highlights                 
+  ----   -------------------------   -------------------   -------------------------  
+  1      **Amazon ECR**              AWS production        Fastest in AWS, secure     
+  2      **ACR**                     Azure                 Best integration with AKS  
+  3      **GAR**                     GCP                   Next-gen registry, fast    
+  4      **Docker Hub**              Public base images    Largest library            
+  5      **GHCR**                    GitHub users          Works with Actions         
+  6      **GitLab Registry**         GitLab CI users       Auto registry              
+  7      **Quay.io**                 Security-heavy apps   Clair scanning             
+  8      **Artifactory**             Large enterprises     Multi-artifact support     
+  9      **Harbor**                  Self-hosted           Open-source + secure       
+  10     **DigitalOcean Registry**   Startups/SMEs         Simple & cost-effective    
+
+
+kubectl create secret docker-registry NAME --docker-username=user
+--docker-password=password --docker-email=email -dry-run=client -o yaml > dockercreds.yml
+
+kubectl create -f dockercreds.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod1
+  name: pod1
+spec:
+  containers:
+  - image: rahamshaik/swiggythree:v3
+    name: pod1
+  imagePullSecrets:
+  - name: dockercreds
+
+
+
+STEP-1: INSTALL ETCDCTL AND ETCDUTL
+
+#! /bin/bash
+sudo apt update -y
+sudo apt install vim wget curl -y
+export RELEASE=$(curl -s https://api.github.com/repos/etcd-io/etcd/releases/latest grep tag_name   cut -d '"' -f 4)
+wget https://github.com/etcd-io/etcd/releases/download/${RELEASE}/etcd-${RELEASE}-linux-amd64.tar.gz
+tar xvf etcd-${RELEASE}-linux-amd64.tar.gz 
+mv etcd-v3.6.7-linux-amd64/etcd /usr/local/bin 
+mv etcd-v3.6.7-linux-amd64/etcdctl /usr/local/bin 
+mv etcd-v3.6.7-linux-amd64/etcdutl /usr/local/bin 
+etcd --version
+
+
+STEP-2: ETCD POD INFO 
+kubectl describe po etcd-minikube -n kube-system
+
+STEP-3: TAKE BACKUP (get cret values from above etcd pod)
+
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379   --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key   snapshot save /tmp/raham.db
+
+STEP-4: RESTORE
+etcdutl --data-dir /var/lib/etcd/abcd snapshot restore raham.db
+
+
+======================================================================
+
+
+
+HELM:
+
+In K8S Helm is a package manager to install packages
+in Redhat: yum & Ubuntu: apt & K8s: helm 
+
+it is used to install applications on clusters.
+we can install and deploy applications by using helm
+it manages k8s resources manifest files through charts 
+chart is collection of manifest files organized on a directory structure.
+a running instance of a chart with a specific config is called a release.
+
+INSTALLATION OF HELM:
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+
+INSTALLATION OF METRIC SERVER:
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+
+CHARTS WEBSITE LINK: https://artifacthub.io/
+
+DOWNLOADING CHARTS PROMETHEUS & GRAFANA:
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+
+
+UPDATE HELM CHART REPOS:
+helm repo update
+helm repo list
+
+CREATE PROMETHEUS NAMESPACE:
+kubectl create namespace prometheus
+kubectl get ns
+
+INSTALL PROMETHEUS:
+helm template prometheus-community/prometheus
+
+helm install prometheus prometheus-community/prometheus --namespace prometheus --set alertmanager.persistentVolume.storageClass="gp2" --set server.persistentVolume.storageClass="gp2"
+kubectl get all -n prometheus
+
+CREATE GRAFANA NAMESPACE:
+kubectl create namespace grafana
+
+INSTALL GRAFANA:
+helm template grafana grafana/grafana
+
+helm uninstall grafana grafana/grafana --namespace grafana
+
+helm install grafana grafana/grafana --namespace grafana --set persistence.storageClassName="gp2" --set persistence.enabled=true --set adminPassword='RahamDevOps' --set  service.type=LoadBalancer
+kubectl get all -n grafana
+kubectl get svc -n grafana
+
+
+
+helm install grafana grafana/grafana --namespace grafana  --set adminPassword='RahamDevOps' --set  service.type=NodePort
+
+
+NOTE: ALLOW PORTS ON SG
+
+Copy the EXTERNAL-IP and paste in browser
+
+Go to Grafana Dashboard → Add the Datasource → Select the Prometheus
+add the below url in Connection and save and test
+http://prometheus-server.prometheus.svc.cluster.local/
+
+Import Grafana dashboard from Grafana Labs
+grafana dashboard → new → Import → 14623 → load → select prometheus → import
+
+
+
+NOW DEPLOY ANY APPLICATION AND SEE THE RESULT IN DASHBOARD.
+
+
+ADD 315 PORT TO MONITOR THE FOLLOWING TERMS:
+Network I/O pressure.
+Cluster CPU usage.
+Cluster Memory usage.
+Cluster filesystem usage.
+Pods CPU usage.
+
+ADD 1860 PORT TO MONITOR NODES INDIVIDUALLY 
+
+11454 -- > for pv and pvcs
+747 -- > pod metrics
+14623 -- > k8s overview db
+13105
+15661
+15757	
+
+
+| Dashboard | Purpose                         |
+| --------- | ------------------------------- |
+| 15757     | Cluster Overview                |
+| 15758     | Pods & Namespaces               |
+| 15759     | Node Monitoring                 |
+| 15760     | Deployment & Replica Monitoring |
+| 1860      | Node Infra Metrics              |
+| 315       | Full K8s Visibility             |
+
+	
+
+1 CLUSTER :
+5000 NODES
+1,50,000 PODS
+3,00,000 CONTAINERS
+110 PODS/NODE
+CHATGPT:
+
+
+
+
+CREATE YOUR OWN CHART:
+helm create devops
+cd devops
+helm install version-1 .
+NOTE: change ClusterIP to NodePort by using kubectl edit svc command
+kubectl get all
+helm uninstall version-1
+
+Chart.yaml  : information about Chart
+values.yaml : Values for Manifest files
+Template    : Its a folder which has all the k8s manifest files.
+
+
+NOTE: values will be refer by Value.yml from template folder
+we use go language for it.
+
+======================================================================================================================
+
+
+
+===================================================================================================
+BULLET POINTS:
+1. ITS A SERVICE USED TO EXPOSE APP
+2. IT EXPOSE APP BASED ON URL
+3. IT SUPPORTS ENCRYPTION AND SSL REDIRECTION
+4. TO DISTRIBUTE TRAFFIC EFFICIENTLY WE CAN USE INGRESS
+5. BY DEFAULT THIS IS NOT INSTALLED ON CLUSTER WE NEED TO INSTALL.
+
+INGRESS IN K8S:
+Ingress helps to expose the HTTP and HTTPS routes from outside of the cluster.
+Ingress supports 
+Path-based  
+Host-based routing
+Ingress supports Load balancing and SSL termination.
+It redirects the incoming requests to the right services based on the Web URL or path in the address.
+Ingress provides the encryption feature and helps to balance the load of the applications.
+
+Ingress is used to manage the external traffic to the services within the cluster which provides features like host-based routing, path-based routing, SSL termination, and more. Where a Load balancer is used to manage the traffic but the load balancer does not provide the fine-grained access control like Ingress.
+
+Example:
+Suppose you have multiple Kubernetes services running on your cluster and each service serves a different application such as example.com/app1 and example.com/app2. With the help of Ingress, you can achieve this. However, the Load Balancer routes the traffic based on the ports and can't handle the URL-based routing.
+
+To install ingress, firstly we have to install nginx ingress controller:
+command: kubectl create -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.1/deploy/static/provider/cloud/deploy.yaml
+
+
+Once we install ingress controller, we have to deploy 2 applications. 
+yum install git -y
+
+github url: git clone https://github.com/RAHAMSHAIK007/ingress.git
+kubectl create -f .
+
+After executing all the files, use kubectl get ing to get ingress. After 30 seconds it will provide one load balancer dns.
+
+access those applications using dns/nginx and dns/httpd. So the traffic will route into both the applications as per the routing
+
+
+CNI:
+In Kubernetes (K8s), CNI stands for Container Network Interface. 
+It's a set of plugins used to configure network interfaces in Linux containers. 
+The CNI is essential for Kubernetes networking, as it allows pods to communicate with each other and with external networks.
+
+Key Points About CNI in Kubernetes:
+What it does:
+
+Assigns IP addresses to pods.
+Connects pod networks to the host and other pods.
+Manages routing and network policies.
+
+
+Popular CNI Plugins:
+CNI: CONTAINER N/W INTERFACE 
+
+Calico 
+Flannel 
+Weave 
+Cilium 
+Canal 
+Romana
+
+
+CNI configuration files are usually found in /etc/cni/net.d/
+Plugin binaries are in /opt/cni/bin/
+
+
+
+AI TOOLS FOR K8S: REMOVED FOR KOPS USE THIS ON AWS EKS
+
+CAST-AI: SHOWS THE COST AND OPTIMZE THE COST FOR K8S CLUSTER
+CREATE CLUSTER
+CREATE CASTAI ACCOUNT
+CONNECT TO CLUSTER -- > SELECT KOPS -- > COPY PASTE COMMANDS IN CLUSTER -- > I RAN SCRIPT
+CONNECT CLUSTER
+
+
+K8SGPT: CHATGPT FOR K8S WORKS
+install kops cluster
+
+UBUNTU:
+curl -LO https://github.com/k8sgpt-ai/k8sgpt/releases/download/v0.3.24/k8sgpt_amd64.deb
+sudo dpkg -i k8sgpt_amd64.deb
+k8sgpt version
+
+AMAZONLINUX:
+
+curl -LO https://github.com/k8sgpt-ai/k8sgpt/releases/download/v0.3.24/k8sgpt_amd64.rpm
+sudo rpm -ivh -i k8sgpt_amd64.rpm
+k8sgpt version
+
+
+CONNECT K8S CLUSTER TO OPENAI:
+k8sgpt auth add
+LOGIN TO OPENAI ACCOUNT -- > PROFILE -- > APIKEYS
+copy past the key u generate from openai chatgpt
+k8sgpt analyze
+k8sgpt analyze -o json
+k8sgpt analyze -o json   jq .
+k8sgpt analyze --explain --filter=Pod --namespace=default
+
+
+====================================================================================================================================
+
+
+K8S DEPLOYEMNT STRATAGIES:
+
+yum install git -y
+yum install docker -y && systemctl start docker
+git clone https://github.com/RAHAMSHAIK007/netflix-clone.git
+cd netflix-clone
+Go to login.html -- > line 28 -- > v-1.0
+
+
+vi Dockerfile
+
+FROM ubuntu
+RUN apt update
+RUN apt install apache2 -y
+COPY * /var/www/html/
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
+
+docker build -t netflix:1.0 .
+
+Modify the code and build the image again
+docker build -t netflix:2.0 .
+
+ROLLING UPDATE:
+
+ROLLING STRATEGIES:
+If you have some application servers running then you will create some new servers you will remove old.
+in that case your old code and new code will be capable of running at same time in parallel environment that is old environment and new environment.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+  name: netflix-deploy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: LoadBalancer
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+
+kubectl edit deployment netflix-deploy
+line 33: modify v:1.0 to 2.0
+
+RECREATE:
+
+We need to Down all the servers and we need to deploy new version then we need to bring the services into Running state.
+We can also achieve this on another way we need to create a separate infrastructure.
+And you can migrate to new infra to minimise the downtime.
+But in this case we can run previous, current and new code run in same time.
+Here we required some downtime.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+  name: netflix-deploy
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: LoadBalancer
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+
+kubectl edit deployment netflix-deploy
+line 33: modify v:1.0 to 2.0
+
+
+BLUE GREEN: 
+
+BLUE-GREEN DEPLOYMENT:
+If we have some existing servers then we create new servers and we will route traffic by using ELB from existing servers to the new servers.
+If it will not work properly we need to do Rollback
+Blue is the Old code and the Green is New code.
+Blue/Green Deployment: Version B is released alongside Version A, and then the traffic is switched over to Version B.
+
+
+
+cat dep1.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+    version: blue
+  name: netflix-blue-deploy
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:1.0
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service1
+spec:
+  type: LoadBalancer
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+
+
+cat dep2.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: netflix
+    version: green
+  name: netflix-green-deploy
+
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: netflix
+  template:
+    metadata:
+      labels:
+        app: netflix
+    spec:
+      containers:
+      - name: cont1
+        image: rahamshaik/mynetflix:2.0
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service2
+spec:
+  type: LoadBalancer
+  selector:
+    app: netflix
+  ports:
+    - port: 80
+
+AFTER EXECURING BOTH FILES
+
+we will delete the dep1.yml
+
+CANARY:
+Canary: Version B is released to a subgroup of users, then proceeds to a full rollout
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+    version: stable
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: stable
+    spec:
+      containers:
+        - name: nginx
+          image: rahamshaik/mynetflix:1.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-canary
+  labels:
+    app: nginx
+    version: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: canary
+    spec:
+      containers:
+        - name: nginx
+          image: rahamshaik/mynetflix:2.0
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service2
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+
+kubectl create -f dep.yml
+
+modif v:1.0 to v:2.0 and apply
+
+kubectl describe po   grep -i image
+
+HELM ARCHITECTURE:
+
+├── Chart.yaml
+├── charts
+├── templates
+│   ├── _helpers.tpl
+│   ├── deployment.yaml
+│   ├── hpa.yaml
+│   ├── httproute.yaml
+│   ├── ingress.yaml
+│   ├── service.yaml
+│   ├── serviceaccount.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+
+Chart.yaml : It has Helm chart information
+values.yaml: It has values information for variables
+templates  : It has manifest files information
+
+
+
+
+COMMANDS:
+helm ceate raham
+cd raham
+helm install version-1 .
+helm uninstall version-1 .
+
+Make the changes in manifest files and check it
+
+
+
+===========================================================================================
+
+ARGOCD:
+
+INTRO:
+ArgoCD is a declarative continuous delivery tool for Kubernetes.
+ArgoCD is the core component of Argo Project.
+It helps to automate the deployment and management of applications in a K8s cluster. 
+It uses GitOps methodology to manage the application lifecycle and provides a simple and intuitive UI to monitor the application state, rollout changes, and rollbacks.
+
+in GitHub we put k8s manifest file and that file is going to execute by argocd in k8s cluster.
+
+ArgoCD will continuously monitor the Git repository for changes and automatically apply them to the Kubernetes cluster.
+
+ArgoCD also provides advanced features like application health monitoring, automated drift detection, and support for multiple environments such as production, staging, and development. 
+
+It is a popular tool among DevOps teams who want to streamline their Kubernetes application deployment process and ensure consistency and reliability in their infrastructure.
+
+
+BULLET POINTS:
+its a continuous delivery tool for Kubernetes.
+automate the deployment of applications in a K8s cluster.
+it uses GitOps methodology (GitOps = Git + Operations)
+in GitHub we put k8s manifest file and that file is going to execute by argocd in k8s cluster.
+If argocd find any changes in GitHub it will automatically applies to cluster.
+
+
+
+STEP-1:
+CREATE CLUSTER USING KOPS
+
+STEP-2:
+INSTALL HELM:
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+helm version
+
+STEP-3:
+INSTALL ARGO CD USING HELM
+helm repo add argo-cd https://argoproj.github.io/argo-helm
+helm repo update
+kubectl create namespace argocd
+helm install argocd argo-cd/argo-cd -n argocd 
+kubectl get all -n argocd
+
+
+
+EXPOSE ARGOCD SERVER:
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl get all -n argocd
+NOTE: GIVE OR CHECK SG FOR PORTS
+
+COPY PASTE DNS TO BROWSER
+ADVANCE 
+LOGIN PAGE
+
+username: admin
+passowd: 
+
+TO GET ARGO CD PASSWORD:
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o yaml 
+decode the above secret (echo -n "data"   base64 -d)
+
+
+The above command to provide password to access argo cd
+
+IN REAL FOR DEV &TEST ENV WE CAN USE 100% AUTOMATED DEPLOYENTS
+FOR PRODUCTION WE PERFER SEMI-AUTOMATED.
+ 
+
+NEW APP
+NAME: APP1
+PROJECT NAME: default
+Sync Policy: Manual
+REPO: https://github.com/devopsbyraham/argocd.git
+PATH: ./
+CLUSTER URL: https://kubernetes.default.svc
+NAMESPACE: default
+CREATE
+
+SYNC
+SYNCHRONIZE
+
+v-1: 5
+v-2: 6
+v-3: 7
+v-4: 10
+
+
+
+MICROSERVICE PROJECT:
+Q: TELL ME ABOUT YOUR CURRENT PROJECT YOU ARE WORKING ON ?
+INTRO: THANKS FOR GIVING THE OPPURTUNITY TO EXPLAIN MY PROJECT.
+
+
+
+
+1. IN MY COMPANY WE USE MICROSERVICE ARCHITECTURE FOR OUR PROJECT.
+2. OUR REAL TIME WORK AS A DEVOPS ENGINEER WILL START WITH CREATING CLUSTER.
+3. FOR INFRA CREATION WE USE TERRAFORM/EKS/KOPS IN OUR COMPANY.
+4. WE USE MODULES TO CREATE 3 TIER ARCHITECTURE IN AWS CLOUD.
+
+5. ONCE CLUSTER GOT CREATED WE CONFIGURE THE CLUSTER.
+6. WE INSTALL CNI, INGRESS, METRIC SERVER, OIDC, HELM -----
+7. WE TEST CLUSTER IS WORKING OR NOT BY CREATION SOME DEMO PODS.
+
+8. OUR DEV WILL PUSH THE CODE TO GITHUB WE INTEGRATE CODE FROM GITHUB TO JENKINS
+9. IN JENKINS WE DO CI (BUILD + TEST) AS RESULT WE GET IMAGE
+10. WE STORE IMAGE DOCKER HUB.
+11. WE RUN THE PIPELINE/ARGOCD THAT WILL DEPLOY THE APP AUTOMATICALLY TO THE CLUSTER.
+12. AFTER DEV NS WE DEPLOY ON TEST AND UAT IF EVERY THING IS FINE WE DEPLOY THE APP TO PROD.
+
+PIPELINE FLOW: 
+CODE -- > BUILD -- > TEST -- > SONARQUBE -- > GATEQUALITY  -- > OWASP -- > TRIVY -- > BUILD -- > TAG & PUSH TO DOCKERHUB  -- > SLACK NOITFY
+GITHUB (MANIFEST) -- > ARGOCD -- > DEPLOY TO CLUSTER
+
+13. AFTER DEPLOYING THE APP WE VERIFY THE APP IS RUUNING OR NOT FROM ELB DNS.
+14. FINALLY ONCE EVERYTHING IS DONE WE MONITOR THE SERVERS FROM GRAFANA.
+
+TOOLS:
+CLOUD		: AWS
+INFRA		: TERRAFORM/EKS/KOPS
+CODE		: GIT & GITHUB
+CI		: JENKINS
+CD		: ARGOCD
+PACKAGE MANAGER : HELM
+MONITORING 	: PROMETHEUS & GARFANA
+APP SERVER	: TOMCAT
+NOTIFICATIN	: SLACK
+CODE QUALITY    : SONARQUBE
+IMAGE SCAN	: TRIVY
+
+
+===================================================================================================================
+
+KUSTOMIZE: used to deploy apps to multiple env and namespaces at same time.
+MAIN FOLDERS:
+1. Base
+2. Overlay
+
+BASE: it has complete manifest files required to deploy app
+kustomization.yaml: it will manage manifest files
+if you give 2 manifest files inside this file it will execute 2 manifest files
+if you give 3 manifest files inside this file it will execute 3 manifest files
+
+
+git clone https://github.com/RAHAMSHAIK007/kustomize.git
+cd kustomize
+apt update && apt install tree
+
+kubectl apply -k base  		: to apply files normally	
+kubectl apply -k overlay/dev    :to apply files on dev env	
+kubectl apply -k overlay/test   :to apply files on test env	
+
+
+CRD: in k8s we can create custom  objects 
+we can extend the k8s api to create objects
+first create crd and later create the object
+
+
+
+# bus-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: buses.example.com  # CRD name = plural + group
+spec:
+  group: example.com       # Custom API group
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                routeNumber:
+                  type: string
+                  description: "The route number of the bus"
+                driverName:
+                  type: string
+                  description: "Name of the driver"
+                passengers:
+                  type: integer
+                  description: "Number of passengers currently on the bus"
+                city:
+                  type: string
+                  description: "Number of passengers currently on the bus"
+  scope: Namespaced
+  names:
+    plural: buses
+    singular: bus
+    kind: Bus
+    shortNames:
+      - bs
+
+
+kubectl get crd
+kubectl describe crd buses.example.com
+
+
+# bus-instance.yaml
+apiVersion: example.com/v1
+kind: Bus
+metadata:
+  name: city-bus-101
+  namespace: default
+spec:
+  routeNumber: "101A"
+  driverName: "Ravi Kumar"
+  passengers: 35
+
+
+
+ADMISSION CONTROLLER:
+it helps to create/manage the dependencies before a object is created.
+first it check authentication & authorization.
+
+Mutating: modify the objects
+Validating: accept/reject the request
+
+
+kubectl run pod1 --image nginx -n radhika  : failed  because there is no Radhika ns
+
+but if we enable admission controller it works 
+how to enable 
+
+kubectl run pod1 --image nginx -n radhika 
+
+
+vi /etc/kubernetes/manifests/kube-apiserver.yaml
+    - --enable-admission-plugins=NodeRestriction,NamespaceAutoProvision
+wait for few mins api pod will recreate 
+
+
+kubectl run pod1 --image nginx -n radhika 
+kubectl run pod1 --image nginx -n tillu 
+kubectl run pod1 --image nginx -n abd 
+kubectl run pod1 --image nginx -n demo 
+
+
+====================================================================================================
+STATEFUL SET:
+
+stateful: which stores data permanently
+stateless: which stores data temporarily
+
+STATEFUL SET:
+Each pod gets a fixed name like: mysql-0, mysql-1
+Each pod is attached to its own persistent volume
+Pods are created sequentially (0 → 1 → 2)
+If a pod dies → it comes back with SAME STORAGE, NAME, IDENTITY
+Real-Time Use Cases:
+Databases → MySQL, PostgreSQL, MongoDB
+Distributed systems → Kafka, Zookeeper
+
+
+Workload Type    Manages What Kind of Apps                             
+Deployment       Stateless apps (don’t need to remember data)                     
+StatefulSet      Stateful apps (need to remember data and identity) 
+
+
+USE CASES:
+
+Real-Life Scenario          Description                                                          
+Databases                   MySQL, PostgreSQL, MongoDB, Cassandra — all need stable storage.     
+Message Brokers             Kafka, RabbitMQ, or Zookeeper — each node maintains local logs.      
+Search Systems              Elasticsearch — each node holds unique index data.                   
+Distributed File Systems    Ceph, GlusterFS, MinIO — where each node stores part of total data.  
+
+
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: "mongo"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-storage
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 200Mi
+
+
+EXECUTION:
+
+kubectl exec -it mongo-0 -- /bin/bash 
+cd /data/db
+create some files
+Delete the pod and you can get same data
+
+CRONJOBS:
+
+CronJobs are useful for cluster jobs that must be completed on a regular basis. 
+They are handy for conducting backups, sending emails, or scheduling particular activities for a specified time, such as when your cluster is expected to be idle.
+
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hw
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - echo Hello World!
+          restartPolicy: OnFailure
+
+
+NETWORK POLOCIES: 
+TO ALLOW/BLOCK THE COMMUNICATION BLW PODS
+WE CAN SELECT PODS BY USING LABELS.
+
+
+
+SECRITY CONTEXTIN K8S:
+HOW DO YOU RESTRICT THE ACCESS OF A CONTAINER 
+USING SECURITY CONTEXT RUN CONTAINER AS NON-ROOT USER
+USE DROP LINUX CAPABILITIES ALL
+SECURITY CONTEXT WILL APPLY ON BOTH POD LEVEL AND CONTAINER LEVEL 
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-nonroot
+spec:
+  securityContext:
+    runAsUser: 1000            # User ID (non-root)
+    runAsGroup: 3000           # Group ID (non-root)
+    fsGroup: 2000              # Group for mounted volumes
+  containers:
+    - name: nginx
+      image: nginx:latest
+      securityContext:
+        allowPrivilegeEscalation: false   # Prevent privilege escalation
+        runAsNonRoot: true                # Ensures container cannot run as root
+        capabilities:
+          drop:
+            - ALL                         # Drop all Linux capabilities
+      ports:
+        - containerPort: 80
+
+
+======================================================================================\
+
+
+
+Displaying Docker & K8s Notes.txt.
